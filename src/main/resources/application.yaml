@@ -1,0 +1,19 @@
+spring:
+  application:
+    name: barkit
+
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: ${AWS_DB_URL}
+    username: ${AWS_DB_USER}
+    password: ${AWS_DB_PW}
+
+  jpa:
+    database: mysql
+    database-platform: org.hibernate.dialect.MySQLDialect
+    show-sql: true
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        format_sql: true
