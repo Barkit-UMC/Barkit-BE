@@ -5,7 +5,7 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.DayOfWeek;
-import java.time.LocalDateTime;
+import java.time.LocalTime;
 
 @Entity
 @Builder
@@ -27,10 +27,10 @@ public class StoreHour extends BaseEntity {
     private DayOfWeek dayOfWeek;
 
     @Column(name = "open", nullable = false)
-    private LocalDateTime open;
+    private LocalTime open;
 
     @Column(name = "close", nullable = false)
-    private LocalDateTime close;
+    private LocalTime close;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "store_id", nullable = false)

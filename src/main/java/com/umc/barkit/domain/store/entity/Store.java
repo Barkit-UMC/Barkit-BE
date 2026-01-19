@@ -21,8 +21,8 @@ public class Store extends BaseEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "description", length = 100, nullable = false)
-    private String description;
+    @Column(name = "name", length = 100, nullable = false)
+    private String name;
 
     @Column(name = "address", length = 100, nullable = false)
     private String address;
