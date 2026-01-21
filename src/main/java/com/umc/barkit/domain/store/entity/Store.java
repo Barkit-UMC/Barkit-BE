@@ -14,7 +14,6 @@ import java.util.List;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
 @Builder
-
 @Table(name="store")
 public class Store extends BaseEntity {
     @Id
@@ -42,16 +41,7 @@ public class Store extends BaseEntity {
     @Column(name = "kakao_id", length = 255, nullable = false)
     private String kakaoId;
 
-    @OneToMany(mappedBy = "store")
-    private List<Facility> facilities = new ArrayList<>();
-
-    @OneToMany(mappedBy = "store")
-    private List<StoreHour> hours = new ArrayList<>();
-
-    @OneToMany(mappedBy = "store")
-    private List<StorePhoto> photos = new ArrayList<>();
-
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "brand_id", nullable = false)
+    @JoinColumn(name = "store_brand_id", nullable = false)
     private StoreBrand brand;
 }
