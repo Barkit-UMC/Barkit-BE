@@ -2,6 +2,7 @@ package com.umc.barkit.domain.favorite.entity;
 
 import com.umc.barkit.domain.favorite.enums.FavoriteStoreStatus;
 import com.umc.barkit.domain.member.entity.User;
+import com.umc.barkit.domain.store.entity.StoreBrand;
 import com.umc.barkit.global.entity.BaseEntity;
 import jakarta.persistence.*;
 import lombok.Getter;
@@ -22,15 +23,31 @@ public class FavoriteStoreBrand extends BaseEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    /* ===== User 연관 ===== */
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
-    // store는 다른 분이 구현
+    /* ===== StoreBrand FK (쓰기 책임) ===== */
     @Column(name = "store_brand_id", nullable = false)
     private Long storeBrandId;
 
+    /* ===== StoreBrand 객체 탐색용 (읽기 전용) ===== */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(
+            name = "store_brand_id",
+            insertable = false,
+            updatable = false
+    )
+    private StoreBrand storeBrand;
+
+    /* ===== 상태 ===== */
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private FavoriteStoreStatus status = FavoriteStoreStatus.ACTIVE;
+
+    /* ===== 도메인 로직 ===== */
+    public void delete() {
+        this.status = FavoriteStoreStatus.DELETED;
+    }
 }
