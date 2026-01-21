@@ -18,8 +18,4 @@ public class Facility extends BaseEntity {
 
     @Column(name = "name", length = 30, nullable = false)
     private String name;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "store_id", nullable = false)
-    private Store store;
 }

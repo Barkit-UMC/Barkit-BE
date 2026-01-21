@@ -26,7 +26,4 @@ public class StoreBrand extends BaseEntity {
     @Column(name = "category", nullable = false)
     @Enumerated(EnumType.STRING)
     private Category category;
-
-    @OneToMany(mappedBy = "brand")
-    private List<Store> stores = new ArrayList<>();
 }
