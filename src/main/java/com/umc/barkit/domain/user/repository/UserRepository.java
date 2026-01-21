@@ -1,6 +1,6 @@
-package com.umc.barkit.domain.member.repository;
+package com.umc.barkit.domain.user.repository;
 
-import com.umc.barkit.domain.member.entity.User;
+import com.umc.barkit.domain.user.entity.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 

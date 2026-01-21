@@ -1,7 +1,7 @@
-package com.umc.barkit.domain.member.entity.mapping;
+package com.umc.barkit.domain.user.entity.mapping;
 
-import com.umc.barkit.domain.member.entity.Term;
-import com.umc.barkit.domain.member.entity.User;
+import com.umc.barkit.domain.user.entity.Term;
+import com.umc.barkit.domain.user.entity.User;
 import jakarta.persistence.*;
 import lombok.*;
 import java.time.LocalDateTime;

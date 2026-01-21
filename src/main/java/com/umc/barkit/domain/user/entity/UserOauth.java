@@ -1,6 +1,6 @@
-package com.umc.barkit.domain.member.entity;
+package com.umc.barkit.domain.user.entity;
 
-import com.umc.barkit.domain.member.enums.AuthProvider;
+import com.umc.barkit.domain.user.enums.AuthProvider;
 import jakarta.persistence.*;
 import lombok.*;
 
