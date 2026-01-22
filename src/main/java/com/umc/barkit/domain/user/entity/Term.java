@@ -1,4 +1,4 @@
-package com.umc.barkit.domain.member.entity;
+package com.umc.barkit.domain.user.entity;
 
 import com.umc.barkit.global.entity.BaseEntity;
 import jakarta.persistence.*;

@@ -1,6 +1,6 @@
 package com.umc.barkit.domain.profile.entity;
 
-import com.umc.barkit.domain.member.entity.User;
+import com.umc.barkit.domain.user.entity.User;
 import com.umc.barkit.global.entity.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
