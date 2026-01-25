@@ -20,28 +20,21 @@ public class Store extends BaseEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "name", length = 100, nullable = false)
-    private String name;
-
-    @Column(name = "address", length = 100, nullable = false)
-    private String address;
-
-    @Column(name = "homepage", length = 255)
-    private String homepage;
-
-    @Column(name = "latitude", precision = 10, scale = 7, nullable = false)
-    private BigDecimal lat;
-
-    @Column(name = "longitude", precision = 10, scale = 7, nullable = false)
-    private BigDecimal lng;
-
     @Column(name = "google_id", length = 255, nullable = false)
     private String googleId;
 
     @Column(name = "kakao_id", length = 255, nullable = false)
     private String kakaoId;
 
+    @Builder.Default
+    @Column(name = "view_count", nullable = false)
+    private Long viewCount = 0L;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "store_brand_id", nullable = false)
     private StoreBrand brand;
+
+    public void addViewCount() {
+        this.viewCount++;
+    }
 }
