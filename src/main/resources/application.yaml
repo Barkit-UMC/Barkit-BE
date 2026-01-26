@@ -29,3 +29,13 @@ cloud:
     credentials:
       accessKey: ${AWS_ACCESS_KEY_ID}
       secretKey: ${AWS_SECRET_ACCESS_KEY}
+
+kakao:
+  api:
+    base-url: https://dapi.kakao.com
+    rest-key: ${KAKAO_REST_API_KEY}
+
+google:
+  api:
+    base-url: https://places.googleapis.com
+    key: ${GOOGLE_API_KEY}
