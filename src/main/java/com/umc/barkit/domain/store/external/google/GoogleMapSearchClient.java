@@ -18,19 +18,31 @@ public class GoogleMapSearchClient {
     @Value("${google.api.key}")
     private String apiKey;
 
-    public List<GoogleResDTO.Place> searchText(String textQuery) {
-
+    public List<GoogleResDTO.Place> searchText(
+            String textQuery,
+            Double lat,
+            Double lng
+    ) {
         GoogleResDTO.SearchTextResponse response =
                 googleWebClient.post()
                         .uri("/v1/places:searchText")
                         .header("X-Goog-Api-Key", apiKey)
                         .header(
                                 "X-Goog-FieldMask",
-                                "places.id,places.displayName,places.photos"
+                                "places.id,places.displayName,places.photos,places.location"
                         )
                         .bodyValue(Map.of(
                                 "textQuery", textQuery,
-                                "languageCode", "ko"
+                                "languageCode", "ko",
+                                "locationBias", Map.of(
+                                        "circle", Map.of(
+                                                "center", Map.of(
+                                                        "latitude", lat,
+                                                        "longitude", lng
+                                                ),
+                                                "radius", 5000
+                                        )
+                                )
                         ))
                         .retrieve()
                         .bodyToMono(GoogleResDTO.SearchTextResponse.class)
@@ -39,8 +51,10 @@ public class GoogleMapSearchClient {
         if (response == null || response.places() == null) {
             return List.of();
         }
+
         return response.places();
     }
+
 
     public String getThumbnailPhotoUrl(GoogleResDTO.Place place) {
         if (place.photos() == null || place.photos().isEmpty()) {
@@ -50,9 +64,10 @@ public class GoogleMapSearchClient {
         return buildPhotoMediaUrl(photoName, 800);
     }
 
-    private String buildPhotoMediaUrl(String photoName, int maxWidthPx) {
+    public String buildPhotoMediaUrl(String photoName, int maxWidthPx) {
         return "https://places.googleapis.com/v1/" + photoName + "/media"
                 + "?maxWidthPx=" + maxWidthPx
                 + "&key=" + apiKey;
     }
+
 }

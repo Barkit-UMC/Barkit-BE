@@ -15,4 +15,10 @@ public interface StoreBrandMembershipBrandRepository extends JpaRepository<Store
     )
     List<Long> findStoreBrandIdsByMembershipBrandId(Long membershipBrandId);
 
+    @Query("select sbmb.membershipBrand.id " +
+            "from StoreBrandMembershipBrand sbmb "+
+            "where sbmb.storeBrand.id = :storeBrandId"
+    )
+    List<Long> findMembershipBrandIdsByStoreBrandId(Long storeBrandId);
+
 }

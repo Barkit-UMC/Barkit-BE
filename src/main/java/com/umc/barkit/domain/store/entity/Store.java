@@ -20,10 +20,10 @@ public class Store extends BaseEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "google_id", length = 255, nullable = false)
+    @Column(name = "google_id", length = 255, unique = true, nullable = false)
     private String googleId;
 
-    @Column(name = "kakao_id", length = 255, nullable = false)
+    @Column(name = "kakao_id", length = 255, unique = true, nullable = false)
     private String kakaoId;
 
     @Builder.Default
