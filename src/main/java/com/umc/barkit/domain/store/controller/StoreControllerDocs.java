@@ -33,7 +33,7 @@ public interface StoreControllerDocs {
             @RequestParam(value = "category", defaultValue = "ALL") Category category,
             @RequestParam("userLat") Double userLat,
             @RequestParam("userLng") Double userLng,
-            @RequestParam(value = "centerLng", required = false) Double centerLat,
+            @RequestParam(value = "centerLat", required = false) Double centerLat,
             @RequestParam(value = "centerLng", required = false) Double centerLng,
             @RequestParam(value = "sort", defaultValue = "DISTANCE") Sort sort
             );

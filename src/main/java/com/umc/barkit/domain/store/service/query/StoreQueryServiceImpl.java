@@ -168,21 +168,15 @@ public class StoreQueryServiceImpl implements StoreQueryService{
             GoogleResDTO.Place googlePlace = getGooglePlace(doc);
             String googleId = (googlePlace != null) ? googlePlace.id() : null;
 
-            Store store = null;
+            if (googleId == null) continue;
 
-            if (googleId != null) {
-                store = storeRepository.findByGoogleId(googleId).orElse(null);
-            }
+            Store store = storeRepository.findByGoogleId(googleId).orElse(null);
 
             if (store == null) {
                 store = storeRepository.findByKakaoId(doc.id()).orElse(null);
             }
 
             if (store == null) {
-                if (googleId == null) {
-                    throw new IllegalStateException("구글 placeId 매칭 실패: " + doc.place_name());
-                }
-
                 store = storeRepository.save(
                         Store.builder()
                                 .kakaoId(doc.id())
