@@ -26,4 +26,13 @@ public class StoreController implements StoreControllerDocs{
                 storeQueryService.search(query, distanceType, category, userLat, userLng, centerLat, centerLng, sort)
         );
     }
+
+    @Override
+    public ApiResponse<StoreResDTO.StoreDetail> detail(String query, Double userLat, Double userLng) {
+        StoreSuccessCode code = StoreSuccessCode.FOUND;
+        return ApiResponse.onSuccess(
+                code,
+                storeQueryService.detail(query, userLat, userLng)
+        );
+    }
 }

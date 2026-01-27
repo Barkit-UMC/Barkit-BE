@@ -9,4 +9,5 @@ import java.util.List;
 
 public interface StoreQueryService {
     List<StoreResDTO.SearchedStore> search (String query, DistanceType distanceType, Category category, Double userLat, Double userLng, Double centerLat, Double centerLng, Sort sort);
+    StoreResDTO.StoreDetail detail (String query, Double userLat, Double userLng);
 }
