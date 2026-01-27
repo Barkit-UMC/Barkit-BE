@@ -23,7 +23,7 @@ public class FavoriteController {
     public ApiResponse<List<FavoriteResponse>> getFavorites(
             @RequestHeader("Authorization") String token
     ) {
-        Long userId = 1L; // TODO: JWT에서 추출
+        Long userId = 100L; // TODO: JWT에서 추출
 
         List<FavoriteStoreBrand> favorites = favoriteService.getFavorites(userId);
         List<FavoriteResponse> result = favorites.stream()
@@ -39,7 +39,7 @@ public class FavoriteController {
             @RequestHeader("Authorization") String token,
             @RequestBody FavoriteCreateRequest request
     ) {
-        Long userId = 1L; // TODO: JWT에서 추출
+        Long userId = 100L; // TODO: JWT에서 추출
 
         favoriteService.createFavorite(userId, request.getStoreBrandId());
         return ApiResponse.onSuccess(GeneralSuccessCode.OK, null);
@@ -51,7 +51,7 @@ public class FavoriteController {
             @RequestHeader("Authorization") String token,
             @PathVariable Long favoriteId
     ) {
-        Long userId = 1L; // TODO: JWT에서 추출
+        Long userId = 100L; // TODO: JWT에서 추출
 
         favoriteService.deleteFavorite(userId, favoriteId);
         return ApiResponse.onSuccess(GeneralSuccessCode.OK, null);
