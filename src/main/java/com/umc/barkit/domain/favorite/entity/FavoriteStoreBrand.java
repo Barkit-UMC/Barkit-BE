@@ -5,12 +5,13 @@ import com.umc.barkit.domain.user.entity.User;
 import com.umc.barkit.domain.store.entity.StoreBrand;
 import com.umc.barkit.global.entity.BaseEntity;
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 @Entity
 @Getter
-@NoArgsConstructor
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
+@Builder
 @Table(
         name = "favorite_store_brand",
         uniqueConstraints = {
@@ -48,7 +49,16 @@ public class FavoriteStoreBrand extends BaseEntity {
     /* ===== 상태 ===== */
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private FavoriteStoreStatus status = FavoriteStoreStatus.ACTIVE;
+    private FavoriteStoreStatus status;
+
+    /* ===== 생성 로직 ===== */
+    public static FavoriteStoreBrand create(User user, Long storeBrandId) {
+        return FavoriteStoreBrand.builder()
+                .user(user)
+                .storeBrandId(storeBrandId)
+                .status(FavoriteStoreStatus.ACTIVE)
+                .build();
+    }
 
     /* ===== 도메인 로직 ===== */
     public void delete() {
