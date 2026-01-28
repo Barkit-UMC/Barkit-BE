@@ -2,6 +2,7 @@ package com.umc.barkit.domain.store.service.query;
 
 import com.umc.barkit.domain.membership.entity.MembershipBrand;
 import com.umc.barkit.domain.membership.repository.MembershipBrandRepository;
+import com.umc.barkit.domain.store.dto.req.StoreReqDTO;
 import com.umc.barkit.domain.store.dto.res.StoreResDTO;
 import com.umc.barkit.domain.store.entity.Store;
 import com.umc.barkit.domain.store.entity.StoreBrand;
@@ -10,17 +11,16 @@ import com.umc.barkit.domain.store.enums.DistanceType;
 import com.umc.barkit.domain.store.enums.Sort;
 import com.umc.barkit.domain.store.external.google.GoogleMapSearchClient;
 import com.umc.barkit.domain.store.external.google.dto.GoogleResDTO;
-import com.umc.barkit.domain.store.external.kakao.KakaoMapSearchClient;
-import com.umc.barkit.domain.store.external.kakao.dto.KakaoResDTO;
 import com.umc.barkit.domain.store.repository.StoreBrandMembershipBrandRepository;
 import com.umc.barkit.domain.store.repository.StoreBrandRepository;
 import com.umc.barkit.domain.store.repository.StoreRepository;
+import com.umc.barkit.domain.store.repository.projection.ViewCountProjection;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -30,39 +30,112 @@ public class StoreQueryServiceImpl implements StoreQueryService{
     private final StoreBrandMembershipBrandRepository storeBrandMembershipBrandRepository;
     private final StoreRepository storeRepository;
     private final StoreBrandRepository storeBrandRepository;
-    private final KakaoMapSearchClient kakaoClient;
     private final GoogleMapSearchClient googleClient;
 
+    private static final double MAX_DISTANCE_KM = 5.0;
+
     @Override
-    public List<StoreResDTO.SearchedStore> search(
-            String query,
+    public StoreResDTO.SearchedStoreSlice search(
+            StoreReqDTO.SearchReq req,
             DistanceType distanceType,
             Category category,
-            Double userLat,
-            Double userLng,
-            Double centerLat,
-            Double centerLng,
-            Sort sort
+            Sort sort,
+            int cursor,
+            int size
     ) {
 
-        //1. 입력값이 멤버십명인지 매장명인지 구별
-        if (isMembershipBrand(query)) {
+        List<StoreResDTO.SearchedStore> fullResult;
+
+        // 입력값이 멤버십명인지 매장명인지 구별
+        if (isMembershipBrand(req.query())) {
             // 멤버십명으로 검색 로직 실행
-            return searchByMembership(
-                    query,
+            fullResult = searchByMembership(
+                    req.query(),
                     distanceType,
                     category,
-                    userLat,
-                    userLng,
-                    centerLat,
-                    centerLng,
-                    sort);
-        } else if (isStoreBrand(query)) {
+                    req.userLat(),
+                    req.userLng(),
+                    req.centerLat(),
+                    req.centerLng()
+            );
+        } else if (isStoreBrand(req.query())) {
             // 매장명으로 검색 로직 실행
-            return List.of();
+            fullResult = List.of();
         } else {
-            //검색 결과 없음 오류 발생
-            return List.of();
+            //검색 결과 없음 오류 발생 or 빈리스트 반환
+            fullResult = List.of();
+        }
+
+        //중복 제거
+        List<StoreResDTO.SearchedStore> deduped = deduplicateByGoogleId(fullResult);
+
+        //정렬
+        sortInPlace(deduped, sort);
+
+        //페이징
+        int from = Math.min(cursor, deduped.size());
+        int to = Math.min(cursor + size, deduped.size());
+
+        List<StoreResDTO.SearchedStore> page = deduped.subList(from, to);
+        boolean hasNext = to < deduped.size();
+        int nextCursor = to;
+
+        return new StoreResDTO.SearchedStoreSlice(page, hasNext, nextCursor);
+
+    }
+
+    private List<StoreResDTO.SearchedStore> deduplicateByGoogleId(List<StoreResDTO.SearchedStore> list) {
+        if (list == null || list.isEmpty()) return List.of();
+        Map<String, StoreResDTO.SearchedStore> map = new LinkedHashMap<>();
+        for (StoreResDTO.SearchedStore s : list) {
+            String key = s.googleId();
+            if (key == null) {
+                key = UUID.randomUUID().toString();
+            }
+            map.putIfAbsent(key, s);
+        }
+        return new ArrayList<>(map.values());
+    }
+
+    private void sortInPlace(List<StoreResDTO.SearchedStore> searchedStores, Sort sort) {
+        if (searchedStores == null || searchedStores.size() <= 1) return;
+
+        if (sort == Sort.DISTANCE) {
+            searchedStores.sort(Comparator.comparing(StoreResDTO.SearchedStore::distanceKm,
+                    Comparator.nullsLast(Double::compareTo)));
+            return;
+        }
+
+        if (sort == Sort.POPULAR) {
+
+            List<String> googleIds = searchedStores.stream()
+                    .map(StoreResDTO.SearchedStore::googleId)
+                    .filter(Objects::nonNull)
+                    .distinct()
+                    .toList();
+
+            if (googleIds.isEmpty()) return;
+
+            Map<String, Long> viewCountMap =
+                    storeRepository.findViewCountsByGoogleIds(googleIds).stream()
+                            .collect(Collectors.toMap(
+                                    ViewCountProjection::getGoogleId,
+                                    p -> Optional.ofNullable(p.getViewCount()).orElse(0L)
+                            ));
+
+            searchedStores.sort((a, b) -> {
+                long va = viewCountMap.getOrDefault(a.googleId(), 0L);
+                long vb = viewCountMap.getOrDefault(b.googleId(), 0L);
+
+                int cmp = Long.compare(vb, va);
+                if (cmp != 0) return cmp;
+
+                //viewCount 같으면 거리순
+                return Comparator.comparing(
+                        StoreResDTO.SearchedStore::distanceKm,
+                        Comparator.nullsLast(Double::compareTo)
+                ).compare(a, b);
+            });
         }
     }
 
@@ -86,11 +159,13 @@ public class StoreQueryServiceImpl implements StoreQueryService{
             Double userLat,
             Double userLng,
             Double centerLat,
-            Double centerLng,
-            Sort sort) {
+            Double centerLng) {
 
         Optional<MembershipBrand> membership = membershipBrandRepository.findByName(query);
-        List<Long> storeBrandIds = storeBrandMembershipBrandRepository.findStoreBrandIdsByMembershipBrandId(membership.get().getId());
+        if (membership.isEmpty()) return List.of();
+
+        List<Long> storeBrandIds =
+                storeBrandMembershipBrandRepository.findStoreBrandIdsByMembershipBrandId(membership.get().getId());
 
         List<String> storeNames = new ArrayList<>();
         List<Long> filteredStoreBrandIds = new ArrayList<>();
@@ -98,6 +173,12 @@ public class StoreQueryServiceImpl implements StoreQueryService{
 
         //카테고리 구분
         categoryChecking(category, storeBrandIds, storeNames, filteredStoreBrandIds);
+
+        /*카테고리 구분 후 일치하는 겁색결과가 없어서
+        storeNames, filteredStoreBrandIds 빈 리스트 일 때*/
+        if (storeNames.isEmpty() && filteredStoreBrandIds.isEmpty()) {
+            return result;
+        }
 
         //외부 API 호출 및 Store 저장
         for (int i = 0; i < storeNames.size(); i++) {
@@ -107,12 +188,11 @@ public class StoreQueryServiceImpl implements StoreQueryService{
             Double sendLat = (distanceType == DistanceType.CURRENT) ? userLat : centerLat;
             Double sendLng = (distanceType == DistanceType.CURRENT) ? userLng : centerLng;
 
-            // 카카오: 근처 매장 리스트
-            List<KakaoResDTO.Document> documents =
-                    kakaoClient.searchByKeyword(storeName, sendLat, sendLng);
+            //매장명으로 구글 API 호출
+            List<GoogleResDTO.Place> places = googleClient.searchText(storeName, sendLat, sendLng);
 
             // store 저장 + StoreResDTO 매핑해서 결과에 합치기
-            result.addAll(saveStoreAndReturnResDTO(storeBrandId, documents, userLat, userLng, sendLat, sendLng));
+            result.addAll(saveStoreAndReturnResDTO(storeBrandId, places, userLat, userLng, sendLat, sendLng));
         }
 
         return result;
@@ -126,8 +206,9 @@ public class StoreQueryServiceImpl implements StoreQueryService{
                 if (storeName.isPresent()) {
                     storeNames.add(storeName.get());
                     filteredStoreBrandIds.add(storeBrandId);
+                } else {
+                    return; // 빈 리스트
                 }
-                //검색 결과 없을 경우 추가해야함
             }
         } else if (category == Category.ALL) {
             for (Long storeBrandId : storeBrandIds) {
@@ -137,74 +218,76 @@ public class StoreQueryServiceImpl implements StoreQueryService{
         }
     }
 
-    private static final double MAX_DISTANCE_KM = 5.0;
-
     private List<StoreResDTO.SearchedStore> saveStoreAndReturnResDTO(
             Long storeBrandId,
-            List<KakaoResDTO.Document> documents,
+            List<GoogleResDTO.Place> places,
             Double userLat,
             Double userLng,
             Double sendLat,
             Double sendLng
     ) {
-        if (documents == null || documents.isEmpty()) return List.of();
+        if (places == null || places.isEmpty()) return List.of();
 
         StoreBrand storeBrand = storeBrandRepository.findById(storeBrandId)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 store_brand"));
 
         List<StoreResDTO.SearchedStoreMembership> membershipsDTO = findMembershipsForStoreBrand(storeBrandId);
 
+        Map<String, GoogleResDTO.Place> uniquePlacesById = new LinkedHashMap<>();
+
+        for (GoogleResDTO.Place p : places) {
+            if (p == null || p.id() == null) continue;
+
+            if (p.location() == null) continue;
+
+            uniquePlacesById.putIfAbsent(p.id(), p);
+        }
+
+        if (uniquePlacesById.isEmpty()) return List.of();
+
+        List<String> googleIds = new ArrayList<>(uniquePlacesById.keySet());
+
+        Map<String, Store> existingByGoogleId =
+                storeRepository.findAllByGoogleIdIn(googleIds).stream()
+                        .collect(Collectors.toMap(Store::getGoogleId, Function.identity()));
+
+        // DB에 없는 googleId만 모아서 한 번에 저장
+        List<Store> toSave = new ArrayList<>();
+        for (String gid : googleIds) {
+            if (!existingByGoogleId.containsKey(gid)) {
+                toSave.add(Store.builder()
+                        .googleId(gid)
+                        .brand(storeBrand)
+                        .build());
+            }
+        }
+
+        if (!toSave.isEmpty()) {
+            List<Store> saved = storeRepository.saveAll(toSave);
+            for (Store s : saved) {
+                existingByGoogleId.put(s.getGoogleId(), s);
+            }
+        }
+
+
         List<StoreResDTO.SearchedStore> result = new ArrayList<>();
 
-        for (KakaoResDTO.Document doc : documents) {
+        for (String gid : googleIds) {
+            GoogleResDTO.Place p = uniquePlacesById.get(gid);
+            Store store = existingByGoogleId.get(gid);
+            if (p == null || store == null) continue;
 
-            double storeLat = Double.parseDouble(doc.y());
-            double storeLng = Double.parseDouble(doc.x());
+            double storeLat = p.location().latitude();
+            double storeLng = p.location().longitude();
 
-            double distKm = distanceKm(sendLat, sendLng, storeLat, storeLng);
+            double distKmFromSendPoint = distanceKm(sendLat, sendLng, storeLat, storeLng);
+            if (distKmFromSendPoint > MAX_DISTANCE_KM) continue;
 
-            if (distKm > MAX_DISTANCE_KM) continue;
-
-            GoogleResDTO.Place googlePlace = getGooglePlace(doc);
-            String googleId = (googlePlace != null) ? googlePlace.id() : null;
-
-            if (googleId == null) continue;
-
-            Store store = storeRepository.findByGoogleId(googleId).orElse(null);
-
-            if (store == null) {
-                store = storeRepository.findByKakaoId(doc.id()).orElse(null);
-            }
-
-            if (store == null) {
-                store = storeRepository.save(
-                        Store.builder()
-                                .kakaoId(doc.id())
-                                .googleId(googleId)
-                                .brand(storeBrand)
-                                .build()
-                );
-            }
-
-            //응답 DTO 매핑
-            result.add(mapToSearchedStore(doc, googlePlace, membershipsDTO, userLat, userLng));
+            result.add(mapToSearchedStore(p, store.getId(), membershipsDTO, userLat, userLng));
         }
 
         return result;
     }
-
-    private GoogleResDTO.Place getGooglePlace(KakaoResDTO.Document doc) {
-        String textQuery = buildGoogleTextQuery(doc); // "매장명 + 주소"
-        Double lat = Double.parseDouble(doc.y());
-        Double lng = Double.parseDouble(doc.x());
-
-        List<GoogleResDTO.Place> places = googleClient.searchText(textQuery, lat, lng);
-
-        if (places == null || places.isEmpty()) return null;
-        return places.get(0);
-    }
-
-
 
     private List<StoreResDTO.SearchedStoreMembership> findMembershipsForStoreBrand(Long storeBrandId) {
         List<Long> membershipIds =
@@ -226,48 +309,45 @@ public class StoreQueryServiceImpl implements StoreQueryService{
                 .toList();
     }
 
-    private String buildGoogleTextQuery(KakaoResDTO.Document doc) {
-        String address = (doc.road_address_name() != null && !doc.road_address_name().isBlank())
-                ? doc.road_address_name()
-                : doc.address_name();
-        return doc.place_name() + " " + address;
-    }
 
     //응답 DTO 매핑
     private StoreResDTO.SearchedStore mapToSearchedStore(
-            KakaoResDTO.Document doc,
-            GoogleResDTO.Place googlePlace,
+            GoogleResDTO.Place p,
+            Long storeId,
             List<StoreResDTO.SearchedStoreMembership> memberships,
             Double userLat,
             Double userLng
     ) {
-        Double storeLat = Double.parseDouble(doc.y());
-        Double storeLng = Double.parseDouble(doc.x());
-
-        String address = (doc.road_address_name() != null && !doc.road_address_name().isBlank())
-                ? doc.road_address_name()
-                : doc.address_name();
+        double storeLat = p.location().latitude();
+        double storeLng = p.location().longitude();
 
         Double distanceKm = round2(distanceKm(userLat, userLng, storeLat, storeLng));
 
-        String directionUrl = buildKakaoDirectionUrl(doc.place_name(), storeLat, storeLng);
-
-        String photoUrl = (googlePlace == null) ? null : googleClient.getThumbnailPhotoUrl(googlePlace);
+        //일단 구글 길찾기로
+        String directionUrl = buildGoogleDirectionUrl(p.id(), storeLat, storeLng);
 
 
         return StoreResDTO.SearchedStore.builder()
-                .name(doc.place_name())
+                .storeId(storeId)
+                .googleId(p.id())
+                .name(p.displayName())
                 .location(StoreResDTO.SearchedStoreLocation.builder()
                         .lat(storeLat)
                         .lng(storeLng)
                         .build())
-                .address(address)
-                .phone(doc.phone())
+                .address(p.formattedAddress())
+                .phone(p.nationalPhoneNumber())
                 .memberships(memberships)
                 .distanceKm(distanceKm)
                 .directionUrl(directionUrl)
-                .photoUrl(photoUrl)
                 .build();
+    }
+
+    //구글 길찾기 url
+    private String buildGoogleDirectionUrl(String placeId, double lat, double lng) {
+        return "https://www.google.com/maps/dir/?api=1"
+                + "&destination=" + lat + "," + lng
+                + "&destination_place_id=" + java.net.URLEncoder.encode(placeId, java.nio.charset.StandardCharsets.UTF_8);
     }
 
     private double round2(double v) {
@@ -288,12 +368,5 @@ public class StoreQueryServiceImpl implements StoreQueryService{
 
         double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
         return EARTH_RADIUS_KM * c;
-    }
-
-    //카카오 길찾기 url
-    private String buildKakaoDirectionUrl(String name, Double lat, Double lng) {
-        return "https://map.kakao.com/link/to/"
-                + java.net.URLEncoder.encode(name, java.nio.charset.StandardCharsets.UTF_8)
-                + "," + lat + "," + lng;
     }
 }
