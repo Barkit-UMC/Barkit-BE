@@ -1,16 +1,25 @@
 package com.umc.barkit.domain.store.repository;
 
 import com.umc.barkit.domain.store.entity.Store;
+import com.umc.barkit.domain.store.repository.projection.ViewCountProjection;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.util.Collection;
+import java.util.List;
 import java.util.Optional;
 
 @Repository
 public interface StoreRepository extends JpaRepository<Store,Long> {
-    boolean existsByKakaoId(String kakaoId);
-
-    Optional<Store> findByKakaoId(String kakaoId);
-
     Optional<Store> findByGoogleId(String googleId);
+
+    List<Store> findAllByGoogleIdIn(Collection<String> googleIds);
+
+    @Query("select s.googleId as googleId, s.viewCount as viewCount " +
+            "from Store s " +
+            "where s.googleId in :googleIds"
+        )
+    List<ViewCountProjection> findViewCountsByGoogleIds(@Param("googleIds") Collection<String> googleIds);
 }

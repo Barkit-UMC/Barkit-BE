@@ -29,7 +29,11 @@ public class GoogleMapSearchClient {
                         .header("X-Goog-Api-Key", apiKey)
                         .header(
                                 "X-Goog-FieldMask",
-                                "places.id,places.displayName,places.photos,places.location"
+                                "places.id," +
+                                        "places.displayName," +
+                                        "places.formattedAddress," +
+                                        "places.nationalPhoneNumber," +
+                                        "places.location"
                         )
                         .bodyValue(Map.of(
                                 "textQuery", textQuery,
@@ -56,14 +60,8 @@ public class GoogleMapSearchClient {
     }
 
 
-    public String getThumbnailPhotoUrl(GoogleResDTO.Place place) {
-        if (place.photos() == null || place.photos().isEmpty()) {
-            return null;
-        }
-        String photoName = place.photos().get(0).name();
-        return buildPhotoMediaUrl(photoName, 800);
-    }
 
+    //상세 페이지용
     public String buildPhotoMediaUrl(String photoName, int maxWidthPx) {
         return "https://places.googleapis.com/v1/" + photoName + "/media"
                 + "?maxWidthPx=" + maxWidthPx
