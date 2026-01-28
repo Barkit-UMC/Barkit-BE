@@ -23,9 +23,6 @@ public class Store extends BaseEntity {
     @Column(name = "google_id", length = 255, unique = true, nullable = false)
     private String googleId;
 
-    @Column(name = "kakao_id", length = 255, unique = true, nullable = false)
-    private String kakaoId;
-
     @Builder.Default
     @Column(name = "view_count", nullable = false)
     private Long viewCount = 0L;

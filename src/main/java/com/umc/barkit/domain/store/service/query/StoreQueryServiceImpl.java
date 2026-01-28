@@ -2,13 +2,11 @@ package com.umc.barkit.domain.store.service.query;
 
 import com.umc.barkit.domain.membership.entity.MembershipBrand;
 import com.umc.barkit.domain.membership.repository.MembershipBrandRepository;
+import com.umc.barkit.domain.store.dto.google.GooglePlaceDTO;
 import com.umc.barkit.domain.store.dto.res.StoreResDTO;
 import com.umc.barkit.domain.store.entity.Store;
-<<<<<<< Updated upstream
 import com.umc.barkit.domain.store.entity.StoreBrand;
-=======
 import com.umc.barkit.domain.store.entity.mapping.StoreBrandMembershipBrand;
->>>>>>> Stashed changes
 import com.umc.barkit.domain.store.enums.Category;
 import com.umc.barkit.domain.store.enums.DistanceType;
 import com.umc.barkit.domain.store.enums.Sort;
@@ -21,9 +19,12 @@ import com.umc.barkit.domain.store.external.kakao.dto.KakaoResDTO;
 import com.umc.barkit.domain.store.repository.StoreBrandMembershipBrandRepository;
 import com.umc.barkit.domain.store.repository.StoreBrandRepository;
 import com.umc.barkit.domain.store.repository.StoreRepository;
+import com.umc.barkit.global.apiPayload.code.GeneralErrorCode;
+import com.umc.barkit.global.apiPayload.exception.GeneralException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+
 
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -44,7 +45,6 @@ public class StoreQueryServiceImpl implements StoreQueryService{
     private final StoreBrandRepository storeBrandRepository;
     private final KakaoMapSearchClient kakaoClient;
     private final GoogleMapSearchClient googleClient;
-    private final StoreRepository storeRepository;
     private final WebClient kakaoWebClient;
 
     @Value("${google.api.key}")
@@ -192,14 +192,10 @@ public class StoreQueryServiceImpl implements StoreQueryService{
 
             Store store = storeRepository.findByGoogleId(googleId).orElse(null);
 
-            if (store == null) {
-                store = storeRepository.findByKakaoId(doc.id()).orElse(null);
-            }
 
             if (store == null) {
                 store = storeRepository.save(
                         Store.builder()
-                                .kakaoId(doc.id())
                                 .googleId(googleId)
                                 .brand(storeBrand)
                                 .build()
@@ -318,176 +314,94 @@ public class StoreQueryServiceImpl implements StoreQueryService{
                 + "," + lat + "," + lng;
     }
 
-    //거리 계산 함수
-    private double calculateDistance(double lat1, double lon1, double lat2, double lon2) {
-        final int R = 6371; // 지구 반지름 (km)
-
-        double dLat = Math.toRadians(lat2 - lat1);
-        double dLon = Math.toRadians(lon2 - lon1);
-
-        double a = Math.sin(dLat / 2) * Math.sin(dLat / 2)
-                + Math.cos(Math.toRadians(lat1)) * Math.cos(Math.toRadians(lat2))
-                * Math.sin(dLon / 2) * Math.sin(dLon / 2);
-
-        double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-
-        return R * c; // km 단위 거리 반환
-    }
 
     @Override
     public StoreResDTO.StoreDetail detail(String placeId, Double userLat, Double userLng) {
-        Store storeEntity = storeRepository.findByKakaoId(placeId)
-                .orElseThrow(()->new StoreException(StoreErrorCode.STORE4001));
 
-        //카카오 API 요청
-        StoreResDTO.KakaoSearchResponse kakaoSearchResponse = kakaoWebClient.get()
-                .uri(uriBuilder -> uriBuilder
-                        .path("/v2/local/search/keyword.json")
-                        .queryParam("query",placeId)
-                        .build()
-                )
-                .retrieve()
-                .bodyToMono(StoreResDTO.KakaoSearchResponse.class)
-                .block();
+        // DB 조회
+        Store store = storeRepository.findByGoogleId(placeId)
+                .orElseThrow(() -> new StoreException(StoreErrorCode.STORE4001));
 
-
-        StoreResDTO.KakaoDocument doc = kakaoSearchResponse.documents().get(0);
-
-        String name = doc.place_name();
-        String address = doc.address_name();
-        String phoneNumber = doc.phone();
-        Double lat = Double.valueOf(doc.y());
-        Double lng = Double.valueOf(doc.x());
+        // Google Places API 호출
+        GooglePlaceDTO.Place g =
+                googleWebClient.get()
+                        .uri(uriBuilder -> uriBuilder
+                                .path("/v1/places/{placeId}")
+                                .build(placeId))
+                        .header("X-Goog-Api-Key", googleApiKey)
+                        .header("X-Goog-FieldMask",
+                                "id,displayName,formattedAddress,websiteUri,location,photos,currentOpeningHours.openNow,currentOpeningHours.weekdayDescriptions,nationalPhoneNumber")
+                        .retrieve()
+                        .bodyToMono(GooglePlaceDTO.Place.class)
+                        .block();
 
 
-        //구글 API 요청
-        String googlePlaceId = storeEntity.getGoogleId();
+        // 위치 계산
+        double storeLat = g.location().latitude();
+        double storeLng = g.location().longitude();
 
-        StoreResDTO.GooglePlaceDetailResponse googlePlaceDetailResponse = null;
-
-        try {
-            googlePlaceDetailResponse = googleWebClient.get()
-                    .uri(uriBuilder -> uriBuilder
-                            .path("/places/" + googlePlaceId)
-                            .queryParam("key", googleApiKey)
-                            .build())
-                    .retrieve()
-                    .bodyToMono(StoreResDTO.GooglePlaceDetailResponse.class)
-                    .block();
-
-            log.info("Google DETAIL SUCCESS = {}", googlePlaceDetailResponse);
-
-        } catch (Exception e) {
-            log.error(" GOOGLE API ERROR", e);
-        }
-
-
-        /*
-        StoreResDTO.GooglePlaceDetailResponse googlePlaceDetailResponse = googleWebClient.get()
-                .uri(uriBuilder -> uriBuilder
-                        .path("/places/"+googlePlaceId)
-                        .queryParam("key",googleApiKey)
-                        .build())
-                .retrieve()
-                .bodyToMono(StoreResDTO.GooglePlaceDetailResponse.class)
-                .block();
-*/
-
-        List<String> openingHours =
-                googlePlaceDetailResponse.regularOpeningHours() != null
-                        ? googlePlaceDetailResponse.regularOpeningHours().weekdayDescriptions()
-                        : Collections.emptyList();
-
-
-        List<String> photoUrls =
-                googlePlaceDetailResponse.photos() != null
-                        ? googlePlaceDetailResponse.photos().stream()
-                        .map(photo -> "https://places.googleapis.com/v1/"
-                                + photo.name()
-                                + "/media?key=" + googleApiKey)
-                        .toList()
-                        : Collections.emptyList();
-
-        List<String> weekday = googlePlaceDetailResponse.regularOpeningHours() != null ?
-                googlePlaceDetailResponse.regularOpeningHours().weekdayDescriptions() :
-                Collections.emptyList();
-
-        String open = weekday.isEmpty() ? null : weekday.get(0);
-        String close = weekday.size() > 1 ? weekday.get(1) : null;
-
-
-        //멤버십 정보 리스트 조회
-        Long storeBrandId = storeEntity.getBrand().getId();
-
-        List<StoreBrandMembershipBrand> mappingList = storeBrandMembershipBrandRepository.findByStoreBrandId(storeBrandId);
-
-        List<MembershipBrand> membershipBrands = mappingList.stream()
-                .map(StoreBrandMembershipBrand::getMembershipBrand)
-                .toList();
-
-        List<StoreResDTO.MembershipInfo> membershipInfos = membershipBrands.stream()
-                .map(mb -> StoreResDTO.MembershipInfo.builder()
-                        .name(mb.getName())
-                        .logoUrl(mb.getLogoUrl())
-                        .build())
-                .toList();
-
-        //거리 계산
-        double distance = calculateDistance(userLat,userLng,lat,lng);
-
-
-        //DTO 형태로
         StoreResDTO.StoreLocation location = StoreResDTO.StoreLocation.builder()
-                .lat(lat)
-                .lng(lng)
+                .lat(storeLat)
+                .lng(storeLng)
                 .build();
 
+        double distance = distanceKm(userLat, userLng, storeLat, storeLng);
 
-        StoreResDTO.StoreContact contact = StoreResDTO.StoreContact.builder()
-                .address(googlePlaceDetailResponse.formattedAddress())
-                .phoneNumber(googlePlaceDetailResponse.nationalPhoneNumber())
-                .homepage(googlePlaceDetailResponse.websiteUri())
-                .build();
+        // 4) 영업시간 정보
+        boolean isOpen = g.currentOpeningHours() != null && g.currentOpeningHours().openNow();
+        List<String> weekdayText =
+                g.currentOpeningHours() != null ? g.currentOpeningHours().weekdayDescriptions() : null;
 
         StoreResDTO.StoreHourInfo hourInfo = StoreResDTO.StoreHourInfo.builder()
-                .open(open)
-                .close(close)
+                .weekdayText(weekdayText)
+                .isOpen(isOpen)
                 .build();
 
-        Boolean wheelchair = googlePlaceDetailResponse.wheelchairAccessibleEntrance() != null
-                ? googlePlaceDetailResponse.wheelchairAccessibleEntrance()
-                : false;
 
-        Boolean pet = googlePlaceDetailResponse.allowsDogs() != null
-                ? googlePlaceDetailResponse.allowsDogs()
-                : false;
+        // 사진 URL 변환
+        List<StoreResDTO.StorePhotoInfo> photos =
+                (g.photos() == null) ? List.of() :
+                        g.photos().stream()
+                                .map(p -> StoreResDTO.StorePhotoInfo.builder()
+                                        .url("https://places.googleapis.com/v1/" + p.name()
+                                                + "/media?key=" + googleApiKey)
+                                        .width(p.widthPx())
+                                        .height(p.heightPx())
+                                        .build())
+                                .toList();
 
 
-        StoreResDTO.StoreFacilityInfo facilityInfo =
-                StoreResDTO.StoreFacilityInfo.builder()
-                        .wheelchair(wheelchair)
-                        .pet(pet)
-                        .build();
+        // 연락 정보
+        StoreResDTO.StoreContact contact = StoreResDTO.StoreContact.builder()
+                .address(g.formattedAddress())
+                .phoneNumber(g.nationalPhoneNumber())
+                .homepage(g.websiteUri())
+                .build();
 
-        List<StoreResDTO.StorePhotoInfo> photos = photoUrls.stream()
-                .map(url -> StoreResDTO.StorePhotoInfo.builder()
-                        .url(url)
+
+        // 멤버십 조회
+        List<StoreBrandMembershipBrand> membershipEntities =
+                storeBrandMembershipBrandRepository.findByStoreBrandId(store.getBrand().getId());
+
+        List<StoreResDTO.MembershipInfo> membershipInfos = membershipEntities.stream()
+                .map(m -> StoreResDTO.MembershipInfo.builder()
+                        .name(m.getMembershipBrand().getName())
+                        .logoUrl(m.getMembershipBrand().getLogoUrl())
                         .build())
                 .toList();
 
-
-
+        // 8) 최종 DTO 조립
         return StoreResDTO.StoreDetail.builder()
-                .name(name)
-                .location(location)
-                .hourInfo(hourInfo)
-                .photos(photos)
-                .membership(membershipInfos)
+                .name(g.displayName() != null ? g.displayName().text() : "이름 정보 없음")
                 .distance(distance)
-                .facilities(facilityInfo)
+                .location(location)
                 .contact(contact)
+                .hourInfo(hourInfo)
+                .membership(membershipInfos)
+                .photos(photos)
                 .build();
     }
+
 
 
 }

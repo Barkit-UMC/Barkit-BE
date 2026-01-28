@@ -28,11 +28,11 @@ public class StoreController implements StoreControllerDocs{
     }
 
     @Override
-    public ApiResponse<StoreResDTO.StoreDetail> detail(String query, Double userLat, Double userLng) {
+    public ApiResponse<StoreResDTO.StoreDetail> detail(String placeId, Double userLat, Double userLng) {
         StoreSuccessCode code = StoreSuccessCode.FOUND;
         return ApiResponse.onSuccess(
                 code,
-                storeQueryService.detail(query, userLat, userLng)
+                storeQueryService.detail(placeId, userLat, userLng)
         );
     }
 }

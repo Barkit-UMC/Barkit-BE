@@ -26,7 +26,7 @@ public class StoreBrandMembershipBrand {
     private StoreBrand storeBrand;
 
     @Column(name = "is_main")
-    private boolean isMain;
+    private Boolean isMain;
 
 
 }

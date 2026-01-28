@@ -44,104 +44,38 @@ public class StoreResDTO {
         private StoreHourInfo hourInfo;
         private List<MembershipInfo> membership;
         private List<StorePhotoInfo> photos;
-        private StoreFacilityInfo facilities;
     }
 
 
-    @Getter
     @Builder
-    public static class StoreContact {
-        private String address;
-        private String phoneNumber;
-        private String homepage;
-    }
-
-    @Getter
+    public record StoreLocation(
+            double lat,
+            double lng
+    ){}
     @Builder
-    public static class MembershipInfo {
-        private String name;
-        private String logoUrl;
-    }
-
-
-    @Getter
-    @Builder
-    public static class StoreFacilityInfo {
-        private Boolean wheelchair;
-        private Boolean pet;
-    }
-
-
-    @Getter
-    @Builder
-    public static class StoreHourInfo {
-        private String open;
-        private String close;
-        private Boolean isOpen;
-    }
-
-
-    @Getter
-    @Builder
-    public static class StoreLocation {
-        private double lat;
-        private double lng;
-    }
-
-
-    @Getter
-    @Builder
-    public static class StorePhotoInfo {
-        private String url;
-        private Integer width;
-        private Integer height;
-    }
-
-
-
-
-    public record KakaoSearchResponse(
-            List<KakaoDocument> documents
+    public record StoreContact(
+            String address,
+            String phoneNumber,
+            String homepage
     ){}
 
-    public record KakaoDocument(
-            String place_name,
-            String address_name,
-            String phone,
-            String x,
-            String y
+    @Builder
+    public record StoreHourInfo(
+            List<String> weekdayText,
+            Boolean isOpen
     ){}
 
-    public record GooglePlaceDetailResponse(
-            String id,
-            DisplayName displayName,
-            String formattedAddress,
-            Location location,
-            String websiteUri,
-            String nationalPhoneNumber,
-            Boolean wheelchairAccessibleEntrance,
-            Boolean allowsDogs,
-            RegularOpeningHours regularOpeningHours,
+    @Builder
+    public record MembershipInfo(
+            String name,
+            String logoUrl
+    ){}
 
-            List<GooglePhoto> photos
-    ) {}
-
-    public record DisplayName(
-            String text
-    ) {}
-
-    public record Location(
-            double latitude,
-            double longitude
-    ) {}
-
-    public record RegularOpeningHours(
-            List<String> weekdayDescriptions
-    ) {}
-
-    public record GooglePhoto(
-            String name
-    ) {}
-
+    @Builder
+    public record StorePhotoInfo(
+            String url,
+            Integer width,
+            Integer height
+    ){}
 
 }
