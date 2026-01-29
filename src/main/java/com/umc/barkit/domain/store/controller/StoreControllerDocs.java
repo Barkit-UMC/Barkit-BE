@@ -42,4 +42,23 @@ public interface StoreControllerDocs {
             @RequestParam(value = "cursor", defaultValue = "0") @ValidCursor int cursor,
             @RequestParam(value = "size", defaultValue = "20") @ValidSize int size
             );
+
+
+    // 매장 상세 정보 조회
+    @Operation(
+            summary = "매장 상세 정보 조회 API",
+            description="매장에서 적용 가능한 멤버십과 매장 상세 정보(영업시간, 전화번호 등)을 확인할 수 있습니다."
+    )
+    @ApiResponses({
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "성공"),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "실패")
+    })
+
+    @GetMapping("/store")
+    ApiResponse<StoreResDTO.StoreDetail> detail(
+            @RequestParam String googleId,
+            @RequestParam("userLat") Double userLat,
+            @RequestParam("userLng") Double userLng
+    );
+
 }

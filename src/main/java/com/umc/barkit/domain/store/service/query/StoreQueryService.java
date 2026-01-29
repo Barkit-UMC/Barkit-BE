@@ -7,6 +7,8 @@ import com.umc.barkit.domain.store.enums.DistanceType;
 import com.umc.barkit.domain.store.enums.Sort;
 
 public interface StoreQueryService {
+    StoreResDTO.StoreDetail detail (String placeId, Double userLat, Double userLng);
+
     StoreResDTO.SearchedStoreSlice search(
             StoreReqDTO.SearchReq req,
             DistanceType distanceType,

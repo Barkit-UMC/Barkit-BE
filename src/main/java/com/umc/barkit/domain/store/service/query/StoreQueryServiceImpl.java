@@ -2,13 +2,17 @@ package com.umc.barkit.domain.store.service.query;
 
 import com.umc.barkit.domain.membership.entity.MembershipBrand;
 import com.umc.barkit.domain.membership.repository.MembershipBrandRepository;
+import com.umc.barkit.domain.store.dto.google.GooglePlaceDTO;
 import com.umc.barkit.domain.store.dto.req.StoreReqDTO;
 import com.umc.barkit.domain.store.dto.res.StoreResDTO;
 import com.umc.barkit.domain.store.entity.Store;
 import com.umc.barkit.domain.store.entity.StoreBrand;
+import com.umc.barkit.domain.store.entity.mapping.StoreBrandMembershipBrand;
 import com.umc.barkit.domain.store.enums.Category;
 import com.umc.barkit.domain.store.enums.DistanceType;
 import com.umc.barkit.domain.store.enums.Sort;
+import com.umc.barkit.domain.store.exception.StoreException;
+import com.umc.barkit.domain.store.exception.code.StoreErrorCode;
 import com.umc.barkit.domain.store.external.google.GoogleMapSearchClient;
 import com.umc.barkit.domain.store.external.google.dto.GoogleResDTO;
 import com.umc.barkit.domain.store.repository.StoreBrandMembershipBrandRepository;
@@ -16,7 +20,12 @@ import com.umc.barkit.domain.store.repository.StoreBrandRepository;
 import com.umc.barkit.domain.store.repository.StoreRepository;
 import com.umc.barkit.domain.store.repository.projection.ViewCountProjection;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
+
+
 import org.springframework.stereotype.Service;
+import org.springframework.web.reactive.function.client.WebClient;
 
 import java.util.*;
 import java.util.function.Function;
@@ -31,6 +40,12 @@ public class StoreQueryServiceImpl implements StoreQueryService{
     private final StoreRepository storeRepository;
     private final StoreBrandRepository storeBrandRepository;
     private final GoogleMapSearchClient googleClient;
+
+
+    @Value("${google.api.key}")
+    private String googleApiKey;
+
+    private final WebClient googleWebClient;
 
     private static final double MAX_DISTANCE_KM = 5.0;
 
@@ -284,6 +299,7 @@ public class StoreQueryServiceImpl implements StoreQueryService{
             if (distKmFromSendPoint > MAX_DISTANCE_KM) continue;
 
             result.add(mapToSearchedStore(p, store.getId(), membershipsDTO, userLat, userLng));
+
         }
 
         return result;
@@ -369,4 +385,84 @@ public class StoreQueryServiceImpl implements StoreQueryService{
         double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
         return EARTH_RADIUS_KM * c;
     }
+
+
+    @Override
+    public StoreResDTO.StoreDetail detail(String googleId, Double userLat, Double userLng) {
+
+        // DB 조회
+        Store store = storeRepository.findByGoogleId(googleId)
+                .orElseThrow(() -> new StoreException(StoreErrorCode.STORE4001));
+
+        // Google Places API 호출
+        GooglePlaceDTO.Place g = googleClient.getPlaceDetail(googleId);
+
+
+        // 위치 계산
+        double storeLat = g.location().latitude();
+        double storeLng = g.location().longitude();
+
+        StoreResDTO.StoreLocation location = StoreResDTO.StoreLocation.builder()
+                .lat(storeLat)
+                .lng(storeLng)
+                .build();
+
+        double distance = round2(distanceKm(userLat, userLng, storeLat, storeLng));
+
+        // 영업시간 정보
+        boolean isOpen = g.currentOpeningHours() != null && g.currentOpeningHours().openNow();
+        List<String> weekdayText =
+                g.currentOpeningHours() != null ? g.currentOpeningHours().weekdayDescriptions() : null;
+
+        StoreResDTO.StoreHourInfo hourInfo = StoreResDTO.StoreHourInfo.builder()
+                .weekdayText(weekdayText)
+                .isOpen(isOpen)
+                .build();
+
+
+        // 사진 URL 변환
+        List<StoreResDTO.StorePhotoInfo> photos =
+                (g.photos() == null) ? List.of() :
+                        g.photos().stream()
+                                .map(p -> StoreResDTO.StorePhotoInfo.builder()
+                                        .url(googleClient.buildPhotoMediaUrl(p.name(), 400))
+                                        .width(p.widthPx())
+                                        .height(p.heightPx())
+                                        .build())
+                                .toList();
+
+
+        // 연락 정보
+        StoreResDTO.StoreContact contact = StoreResDTO.StoreContact.builder()
+                .address(g.formattedAddress())
+                .phoneNumber(g.nationalPhoneNumber())
+                .homepage(g.websiteUri())
+                .build();
+
+
+        // 멤버십 조회
+        List<StoreBrandMembershipBrand> membershipEntities =
+                storeBrandMembershipBrandRepository.findByStoreBrandId(store.getBrand().getId());
+
+        List<StoreResDTO.MembershipInfo> membershipInfos = membershipEntities.stream()
+                .map(m -> StoreResDTO.MembershipInfo.builder()
+                        .name(m.getMembershipBrand().getName())
+                        .logoUrl(m.getMembershipBrand().getLogoUrl())
+                        .build())
+                .toList();
+
+        // DTO 조립
+        return StoreResDTO.StoreDetail.builder()
+                .name(g.displayName() != null ? g.displayName().text() : "이름 정보 없음")
+                .distance(distance)
+                .location(location)
+                .contact(contact)
+                .hourInfo(hourInfo)
+                .membership(membershipInfos)
+                .photos(photos)
+                .build();
+    }
+
+
+
 }
