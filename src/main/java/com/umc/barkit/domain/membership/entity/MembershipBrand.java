@@ -1,7 +1,6 @@
 package com.umc.barkit.domain.membership.entity;
 
 import com.umc.barkit.global.entity.BaseEntity;
-import com.umc.barkit.domain.membership.enums.Color;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -23,8 +22,7 @@ public class MembershipBrand extends BaseEntity {
     @Column(name = "logo_url", length = 255)
     private String logoUrl;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "color", nullable = false, length = 20)
-    private Color color;
+    @Column(name = "color", length = 10)
+    private String color;
 
 }
