@@ -1,5 +1,6 @@
 package com.umc.barkit.domain.store.external.google;
 
+import com.umc.barkit.domain.store.dto.google.GooglePlaceDTO;
 import com.umc.barkit.domain.store.external.google.dto.GoogleResDTO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
@@ -67,5 +68,25 @@ public class GoogleMapSearchClient {
                 + "?maxWidthPx=" + maxWidthPx
                 + "&key=" + apiKey;
     }
+
+
+    // Google Places API 호출
+    public GooglePlaceDTO.Place getPlaceDetail(String googleId) {
+
+        return googleWebClient.get()
+                .uri(uriBuilder -> uriBuilder
+                        .path("/v1/places/{googleId}")
+                        .queryParam("languageCode", "ko")
+                        .build(googleId)
+                )
+                .header("X-Goog-Api-Key", apiKey)
+                .header("X-Goog-FieldMask",
+                        "id,displayName,formattedAddress,nationalPhoneNumber,websiteUri,location,photos," +
+                                "currentOpeningHours.openNow,currentOpeningHours.weekdayDescriptions")
+                .retrieve()
+                .bodyToMono(GooglePlaceDTO.Place.class)
+                .block();
+    }
+
 
 }

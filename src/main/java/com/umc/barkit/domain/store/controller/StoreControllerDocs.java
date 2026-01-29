@@ -56,7 +56,7 @@ public interface StoreControllerDocs {
 
     @GetMapping("/store")
     ApiResponse<StoreResDTO.StoreDetail> detail(
-            @RequestParam String placeId,
+            @RequestParam String googleId,
             @RequestParam("userLat") Double userLat,
             @RequestParam("userLng") Double userLng
     );

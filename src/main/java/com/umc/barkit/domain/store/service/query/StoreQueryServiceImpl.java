@@ -388,24 +388,14 @@ public class StoreQueryServiceImpl implements StoreQueryService{
 
 
     @Override
-    public StoreResDTO.StoreDetail detail(String placeId, Double userLat, Double userLng) {
+    public StoreResDTO.StoreDetail detail(String googleId, Double userLat, Double userLng) {
 
         // DB 조회
-        Store store = storeRepository.findByGoogleId(placeId)
+        Store store = storeRepository.findByGoogleId(googleId)
                 .orElseThrow(() -> new StoreException(StoreErrorCode.STORE4001));
 
         // Google Places API 호출
-        GooglePlaceDTO.Place g =
-                googleWebClient.get()
-                        .uri(uriBuilder -> uriBuilder
-                                .path("/v1/places/{placeId}")
-                                .build(placeId))
-                        .header("X-Goog-Api-Key", googleApiKey)
-                        .header("X-Goog-FieldMask",
-                                "id,displayName,formattedAddress,websiteUri,location,photos,currentOpeningHours.openNow,currentOpeningHours.weekdayDescriptions,nationalPhoneNumber")
-                        .retrieve()
-                        .bodyToMono(GooglePlaceDTO.Place.class)
-                        .block();
+        GooglePlaceDTO.Place g = googleClient.getPlaceDetail(googleId);
 
 
         // 위치 계산
@@ -417,9 +407,9 @@ public class StoreQueryServiceImpl implements StoreQueryService{
                 .lng(storeLng)
                 .build();
 
-        double distance = distanceKm(userLat, userLng, storeLat, storeLng);
+        double distance = round2(distanceKm(userLat, userLng, storeLat, storeLng));
 
-        // 4) 영업시간 정보
+        // 영업시간 정보
         boolean isOpen = g.currentOpeningHours() != null && g.currentOpeningHours().openNow();
         List<String> weekdayText =
                 g.currentOpeningHours() != null ? g.currentOpeningHours().weekdayDescriptions() : null;
@@ -435,8 +425,7 @@ public class StoreQueryServiceImpl implements StoreQueryService{
                 (g.photos() == null) ? List.of() :
                         g.photos().stream()
                                 .map(p -> StoreResDTO.StorePhotoInfo.builder()
-                                        .url("https://places.googleapis.com/v1/" + p.name()
-                                                + "/media?key=" + googleApiKey)
+                                        .url(googleClient.buildPhotoMediaUrl(p.name(), 400))
                                         .width(p.widthPx())
                                         .height(p.heightPx())
                                         .build())
