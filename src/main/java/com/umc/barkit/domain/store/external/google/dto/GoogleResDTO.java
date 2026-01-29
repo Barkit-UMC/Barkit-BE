@@ -11,19 +11,27 @@ import java.util.List;
 @NoArgsConstructor
 public class GoogleResDTO {
 
-        //구글 id
-        public record SearchTextResponse(
-                List<Place> places
-        ) {}
 
-        public record Place(
-                String id,
-                List<Photo> photos
-        ) {}
+    public record SearchTextResponse(
+            List<Place> places
+    ) {}
 
-        public record Photo(
-                String name,
-                Integer widthPx,
-                Integer heightPx
-         ) {}
+
+    public record Place(
+            String id,
+            DisplayName displayName,
+            String formattedAddress,
+            String nationalPhoneNumber,
+            LatLng location
+    ) {}
+
+    public record DisplayName(
+            String text,
+            String languageCode
+    ) {}
+
+    public record LatLng(
+            double latitude,
+            double longitude
+    ) {}
 }

@@ -1,19 +1,26 @@
 package com.umc.barkit.domain.store.controller;
 
+import com.umc.barkit.domain.store.dto.req.StoreReqDTO;
 import com.umc.barkit.domain.store.dto.res.StoreResDTO;
 import com.umc.barkit.domain.store.enums.Category;
 import com.umc.barkit.domain.store.enums.DistanceType;
 import com.umc.barkit.domain.store.enums.Sort;
+import com.umc.barkit.global.annotation.ValidCursor;
+import com.umc.barkit.global.annotation.ValidSize;
 import com.umc.barkit.global.apiPayload.ApiResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import jakarta.validation.Valid;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
 import java.util.List;
 
 @RequestMapping("/api/map")
+@Validated
 public interface StoreControllerDocs {
 
     // 지도 검색 기능(멤버십/매장)
@@ -27,15 +34,13 @@ public interface StoreControllerDocs {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "실패")
     })
     @GetMapping("/search")
-    ApiResponse<List<StoreResDTO.SearchedStore>> search(
-            @RequestParam("query") String query,
+    ApiResponse<StoreResDTO.SearchedStoreSlice> search(
+            @Valid @ModelAttribute StoreReqDTO.SearchReq req,
             @RequestParam(value = "distanceType", defaultValue = "CURRENT") DistanceType distanceType,
             @RequestParam(value = "category", defaultValue = "ALL") Category category,
-            @RequestParam("userLat") Double userLat,
-            @RequestParam("userLng") Double userLng,
-            @RequestParam(value = "centerLat", required = false) Double centerLat,
-            @RequestParam(value = "centerLng", required = false) Double centerLng,
-            @RequestParam(value = "sort", defaultValue = "DISTANCE") Sort sort
+            @RequestParam(value = "sort", defaultValue = "DISTANCE") Sort sort,
+            @RequestParam(value = "cursor", defaultValue = "0") @ValidCursor int cursor,
+            @RequestParam(value = "size", defaultValue = "20") @ValidSize int size
             );
 
 

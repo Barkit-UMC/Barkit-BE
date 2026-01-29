@@ -1,6 +1,7 @@
 package com.umc.barkit.domain.store.exception.code;
 
 import com.umc.barkit.global.apiPayload.code.BaseErrorCode;
+
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import org.springframework.http.HttpStatus;
@@ -43,7 +44,19 @@ public enum StoreErrorCode implements BaseErrorCode {
     // ========== MAP 에러 ==========
     MAP4004(HttpStatus.BAD_REQUEST, "MAP4004", "사용자 위치 정보가 올바르지 않습니다."),
     MAP5002(HttpStatus.BAD_GATEWAY, "MAP5002", "지도 서비스와 통신 중 오류가 발생하였습니다."),
-    MAP5003(HttpStatus.INTERNAL_SERVER_ERROR, "MAP5003", "지도 서비스 응답 처리 중 오류가 발생했습니다.");
+    MAP5003(HttpStatus.INTERNAL_SERVER_ERROR, "MAP5003", "지도 서비스 응답 처리 중 오류가 발생했습니다."),
+
+    CENTER_LOCATION_REQUIRED(
+            HttpStatus.BAD_REQUEST,
+            "MAP4001",
+                    "distanceType이 CENTER인 경우 centerLat와 centerLng는 필수입니다."
+    ),
+
+    CENTER_LOCATION_PAIR_REQUIRED(
+            HttpStatus.BAD_REQUEST,
+            "MAP4002",
+                    "centerLat와 centerLng는 함께 전달되어야 합니다."
+    );
 
 
     private final HttpStatus status;
