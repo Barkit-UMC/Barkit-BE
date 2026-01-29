@@ -46,7 +46,7 @@ public interface StoreControllerDocs {
 
     // 매장 상세 정보 조회
     @Operation(
-            summary = "매장 상세 정보 조회 API seoyeon(개발 중)",
+            summary = "매장 상세 정보 조회 API",
             description="매장에서 적용 가능한 멤버십과 매장 상세 정보(영업시간, 전화번호 등)을 확인할 수 있습니다."
     )
     @ApiResponses({
