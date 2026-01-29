@@ -38,3 +38,4 @@ out/
 
 ### QueryDSL Q파일 무시 ###
 build/generated/
+src/main/generated/
