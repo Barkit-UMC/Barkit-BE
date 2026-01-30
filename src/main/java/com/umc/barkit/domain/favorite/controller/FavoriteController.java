@@ -22,7 +22,7 @@ public class FavoriteController {
     private final FavoriteService favoriteService;
 
     @Operation(
-            summary = "즐겨찾기 목록 조회",
+            summary = "즐겨찾기 목록 조회 (사용 안하는 api)",
             description = "로그인 사용자가 즐겨찾기한 매장 목록을 최대 5개까지 조회합니다."
     )
     @GetMapping
@@ -40,7 +40,7 @@ public class FavoriteController {
     }
 
     @Operation(
-            summary = "즐겨찾기 추가",
+            summary = "즐겨찾기 추가 (사용 안하는 api)",
             description = "특정 매장을 즐겨찾기에 추가합니다. 최대 5개까지 등록 가능하며, 중복 등록은 제한됩니다."
     )
     @PostMapping
@@ -55,7 +55,7 @@ public class FavoriteController {
     }
 
     @Operation(
-            summary = "즐겨찾기 삭제",
+            summary = "즐겨찾기 삭제 (사용 안하는 api)",
             description = "즐겨찾기한 매장을 삭제합니다. 실제 DB 삭제가 아닌 Soft Delete 방식으로 처리됩니다."
     )
     @DeleteMapping("/{favoriteId}")

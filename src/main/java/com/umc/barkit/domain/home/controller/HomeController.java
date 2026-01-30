@@ -21,7 +21,7 @@ public class HomeController {
     @Operation(
             summary = "홈 대시보드 조회",
             description = "홈 화면 진입 시 필요한 핵심 정보를 한 번에 조회합니다. " +
-                    "즐겨찾기 매장 요약, 보유 멤버십 카드 정보를 포함합니다."
+                    "사용자가 보유한 멤버십 카드 목록을 제공합니다."
     )
     @GetMapping("/dashboard")
     public ResponseEntity<ApiResponse<HomeDashboardResponse.DashboardDTO>> getHomeDashboard() {
