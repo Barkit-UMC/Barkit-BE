@@ -23,6 +23,7 @@ import lombok.RequiredArgsConstructor;
 
 
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
 import java.util.function.Function;
@@ -99,12 +100,16 @@ public class StoreQueryServiceImpl implements StoreQueryService{
 
     }
 
+    @Transactional
     @Override
     public StoreResDTO.StoreDetail detail(String googleId, Double userLat, Double userLng) {
 
         // DB 조회
         Store store = storeRepository.findByGoogleId(googleId)
                 .orElseThrow(() -> new StoreException(StoreErrorCode.STORE4001));
+
+        // 조회수
+        store.addViewCount();
 
         // Google Places API 호출
         GooglePlaceDTO.Place g = googleClient.getPlaceDetail(googleId);
