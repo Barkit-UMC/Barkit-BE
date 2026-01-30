@@ -25,6 +25,15 @@ public class HomeDashboardResponse {
          * 사용자 보유 멤버십 카드 요약
          */
         private List<MembershipSummaryDTO> memberships;
+
+        /**
+         * 사용자 보유 멤버십 목록
+         *
+         * - 현재는 사용자가 보유한 모든 멤버십을 단순 나열
+         * - 대표 멤버십(is_main)은 추후 반영 예정
+         *   → user_membership_brand.is_main 컬럼 추가 후
+         *      우선 정렬 또는 별도 필드로 분리 예정
+         */
     }
 
     @Getter
