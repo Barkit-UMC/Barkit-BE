@@ -56,4 +56,18 @@ public class MembershipBrandConverter {
                 .brands(brandDTOs)
                 .build();
     }
+
+    public static MembershipBrandResponseDTO.SearchResultDTO toSearchResultDTO(
+            List<MembershipBrand> brands,
+            Long nextCursor,
+            Boolean hasNext
+    ) {
+        List<MembershipBrandResponseDTO.BrandSimpleDTO> brandDTOs = toBrandSimpleDTOList(brands);
+
+        return MembershipBrandResponseDTO.SearchResultDTO.builder()
+                .brands(brandDTOs)
+                .nextCursor(nextCursor)
+                .hasNext(hasNext)
+                .build();
+    }
 }
