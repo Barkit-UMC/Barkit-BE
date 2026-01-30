@@ -60,6 +60,36 @@ public class GoogleMapSearchClient {
         return response.places();
     }
 
+    public List<GoogleResDTO.Place> searchText(String textQuery) {
+
+        GoogleResDTO.SearchTextResponse response =
+                googleWebClient.post()
+                        .uri("/v1/places:searchText")
+                        .header("X-Goog-Api-Key", apiKey)
+                        .header(
+                                "X-Goog-FieldMask",
+                                "places.id," +
+                                        "places.displayName," +
+                                        "places.formattedAddress," +
+                                        "places.nationalPhoneNumber," +
+                                        "places.location"
+                        )
+                        .bodyValue(Map.of(
+                                "textQuery", textQuery,
+                                "languageCode", "ko"
+                        ))
+                        .retrieve()
+                        .bodyToMono(GoogleResDTO.SearchTextResponse.class)
+                        .block();
+
+        if (response == null || response.places() == null) {
+            return List.of();
+        }
+
+        return response.places();
+    }
+
+
 
 
     //상세 페이지용
