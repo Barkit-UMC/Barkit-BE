@@ -39,3 +39,9 @@ google:
   api:
     base-url: https://places.googleapis.com
     key: ${GOOGLE_API_KEY}
+
+jwt:
+  token:
+    secretKey: ${JWT_SECRET_KEY}
+    expiration:
+      access: 14400000

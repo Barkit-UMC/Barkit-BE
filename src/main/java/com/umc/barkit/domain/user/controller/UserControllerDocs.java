@@ -5,6 +5,8 @@ import com.umc.barkit.domain.user.dto.res.UserResponseDto;
 import com.umc.barkit.global.apiPayload.ApiResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import jakarta.validation.Valid;
+import org.springframework.web.bind.annotation.RequestBody;
 
 public interface UserControllerDocs {
 
@@ -29,4 +31,16 @@ public interface UserControllerDocs {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "실패")
     })
     ApiResponse<UserResponseDto.SignupResponseDto> signup(UserRequestDto.SignupRequestDto signupRequestDto);
+
+
+    @Operation(
+            summary = "로그인 API",
+            description = "사용자가 입력한 이메일과 비밀번호로 로그인한 후, JWT access token을 반환합니다."
+    )
+    @ApiResponses({
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "로그인 성공, JWT access token 반환"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "잘못된 로그인 정보(이메일/비밀번호 불일치)"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "사용자가 존재하지 않음")
+    })
+    ApiResponse<UserResponseDto.LoginResponseDto> login(@RequestBody @Valid UserRequestDto.LoginRequestDto loginDto);
 }
