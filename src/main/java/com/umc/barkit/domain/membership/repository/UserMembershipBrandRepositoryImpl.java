@@ -6,7 +6,9 @@ import com.querydsl.jpa.impl.JPAQueryFactory;
 import com.umc.barkit.domain.membership.entity.UserMembershipBrand;
 import lombok.RequiredArgsConstructor;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import static com.umc.barkit.domain.membership.entity.QMembershipBrand.membershipBrand;
 import static com.umc.barkit.domain.membership.entity.QUserMembershipBrand.userMembershipBrand;
@@ -15,6 +17,13 @@ import static com.umc.barkit.domain.membership.entity.QUserMembershipBrand.userM
 public class UserMembershipBrandRepositoryImpl implements UserMembershipBrandRepositoryCustom {
 
     private final JPAQueryFactory queryFactory;
+
+    private static final Map<String, String> ENGLISH_TO_KOREAN = new HashMap<>() {{
+        put("naver", "네이버");
+        put("kakao", "카카오");
+        put("happy", "해피");
+        put("point", "포인트");
+    }};
 
     @Override
     public List<UserMembershipBrand> searchByUserIdAndKeyword(
@@ -32,8 +41,7 @@ public class UserMembershipBrandRepositoryImpl implements UserMembershipBrandRep
         if (keyword != null && !keyword.trim().isEmpty()) {
             String normalizedKeyword = keyword.replaceAll("[\\s.+-]", "").toLowerCase();
 
-            // 영문 → 한글 매핑
-            String mappedKeyword = getMappedKeyword(normalizedKeyword);
+            String mappedKeyword = ENGLISH_TO_KOREAN.getOrDefault(normalizedKeyword, normalizedKeyword);
 
             builder.and(
                     Expressions.stringTemplate(
@@ -60,15 +68,5 @@ public class UserMembershipBrandRepositoryImpl implements UserMembershipBrandRep
                 .orderBy(userMembershipBrand.id.asc())
                 .limit(limit + 1)
                 .fetch();
-    }
-
-    private String getMappedKeyword(String keyword) {
-        if (keyword.startsWith("naver") || keyword.startsWith("nav") || keyword.startsWith("na")) {
-            return "네이버";
-        }
-        if (keyword.startsWith("kakao") || keyword.startsWith("kak") || keyword.startsWith("ka")) {
-            return "카카오";
-        }
-        return keyword;
     }
 }
