@@ -69,4 +69,18 @@ public class UserMembershipBrandRepositoryImpl implements UserMembershipBrandRep
                 .limit(limit + 1)
                 .fetch();
     }
+
+    @Override
+    public boolean existsByUserIdAndMembershipBrandId(Long userId, Long membershipBrandId) {
+        Long count = queryFactory
+                .select(userMembershipBrand.count())
+                .from(userMembershipBrand)
+                .where(
+                        userMembershipBrand.userId.eq(userId),
+                        userMembershipBrand.membershipBrandId.eq(membershipBrandId)
+                )
+                .fetchOne();
+
+        return count != null && count > 0;
+    }
 }

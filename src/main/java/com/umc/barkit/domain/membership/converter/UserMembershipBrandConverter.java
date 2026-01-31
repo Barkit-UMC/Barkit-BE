@@ -1,6 +1,7 @@
 package com.umc.barkit.domain.membership.converter;
 
 import com.umc.barkit.domain.membership.dto.response.UserMembershipBrandResponseDTO;
+import com.umc.barkit.domain.membership.dto.request.UserMembershipBrandRequestDTO;
 import com.umc.barkit.domain.membership.entity.MembershipBrand;
 import com.umc.barkit.domain.membership.entity.UserMembershipBrand;
 import com.umc.barkit.domain.membership.repository.MembershipBrandRepository;
@@ -44,6 +45,32 @@ public class UserMembershipBrandConverter {
                 .userMembershipBrandId(userBrand.getId())
                 .name(brand.getName())
                 .logoUrl(brand.getLogoUrl())
+                .build();
+    }
+
+    // Request → Entity
+    public static UserMembershipBrand toUserMembershipBrand(
+            Long userId,
+            Long membershipBrandId,
+            UserMembershipBrandRequestDTO.RegisterMembershipDTO request
+    ) {
+        return UserMembershipBrand.builder()
+                .userId(userId)
+                .membershipBrandId(membershipBrandId)
+                .membershipNumber(request.getMembershipNumber())
+                .barcodeRawValue(request.getBarcodeRawValue())
+                .isMain(false)
+                .build();
+    }
+
+    // Entity → Response DTO
+    public static UserMembershipBrandResponseDTO.RegisterMembershipResultDTO toRegisterMembershipResultDTO(
+            UserMembershipBrand userMembershipBrand
+    ) {
+        return UserMembershipBrandResponseDTO.RegisterMembershipResultDTO.builder()
+                .userMembershipBrandId(userMembershipBrand.getId())
+                .membershipNumber(userMembershipBrand.getMembershipNumber())
+                .barcodeRawValue(userMembershipBrand.getBarcodeRawValue())
                 .build();
     }
 }
