@@ -10,7 +10,8 @@ import org.springframework.http.HttpStatus;
 public enum UserSuccessCode implements BaseSuccessCode {
 
     EMAIL_CHECK_OK(HttpStatus.OK, "AUTH2000", "아이디 중복 확인에 성공했습니다."),
-    CREATED(HttpStatus.CREATED, "AUTH2001", "회원가입이 성공적으로 완료되었습니다.");
+    CREATED(HttpStatus.CREATED, "AUTH2001", "회원가입이 성공적으로 완료되었습니다."),
+    LOGIN_OK(HttpStatus.OK, "AUTH2002", "로그인에 성공했습니다.");
 
     private final HttpStatus status;
     private final String code;

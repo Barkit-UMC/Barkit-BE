@@ -36,5 +36,13 @@ public class UserController implements UserControllerDocs{
         return ApiResponse.onSuccess(UserSuccessCode.CREATED, response);
     }
 
+    // 로그인 API
+    @PostMapping("/auth/login")
+    public ApiResponse<UserResponseDto.LoginResponseDto> login(
+            @RequestBody @Valid UserRequestDto.LoginRequestDto loginDto
+    ){
+        return ApiResponse.onSuccess(UserSuccessCode.LOGIN_OK, userQueryService.login(loginDto));
+    }
+
 
 }

@@ -6,6 +6,7 @@ import com.umc.barkit.domain.user.dto.res.UserResponseDto;
 import com.umc.barkit.domain.user.entity.Term;
 import com.umc.barkit.domain.user.entity.User;
 import com.umc.barkit.domain.user.entity.mapping.UserTerm;
+import com.umc.barkit.domain.user.enums.Role;
 import com.umc.barkit.domain.user.repository.TermRepository;
 import com.umc.barkit.domain.user.repository.UserRepository;
 import com.umc.barkit.domain.user.repository.UserTermRepository;
@@ -40,7 +41,7 @@ public class UserCommandService {
         String encodedPassword = passwordEncoder.encode(signupRequestDto.password());
 
         // User 생성
-        User user = UserConverter.toUser(signupRequestDto, encodedPassword);
+        User user = UserConverter.toUser(signupRequestDto, encodedPassword, Role.ROLE_USER);
 
         // User 저장
         userRepository.save(user);
