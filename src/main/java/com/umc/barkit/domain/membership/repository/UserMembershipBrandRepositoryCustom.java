@@ -13,4 +13,7 @@ public interface UserMembershipBrandRepositoryCustom {
             Long cursor,
             Integer limit
     );
+
+    // 멤버십 브랜드 중복 체크
+    boolean existsByUserIdAndMembershipBrandId(Long userId, Long membershipBrandId);
 }

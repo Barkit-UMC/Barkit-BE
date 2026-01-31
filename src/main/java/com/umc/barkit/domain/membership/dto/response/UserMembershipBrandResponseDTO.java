@@ -28,4 +28,14 @@ public class UserMembershipBrandResponseDTO {
         private String name;
         private String logoUrl;
     }
+
+    @Getter
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class RegisterMembershipResultDTO {
+        private Long userMembershipBrandId;
+        private String membershipNumber;
+        private String barcodeRawValue;
+    }
 }
