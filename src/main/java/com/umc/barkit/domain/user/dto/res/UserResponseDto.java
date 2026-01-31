@@ -1,5 +1,6 @@
 package com.umc.barkit.domain.user.dto.res;
 
+import java.time.LocalDate;
 import lombok.Builder;
 
 public class UserResponseDto {
@@ -22,4 +23,13 @@ public class UserResponseDto {
             Long userId,
             String accessToken
     ){}
+
+    // 개인정보
+    public record PersonalInfoResponseDto(
+            String name,
+            String email,
+            String phoneNumber,
+            LocalDate birthDate
+    ) {
+    }
 }
