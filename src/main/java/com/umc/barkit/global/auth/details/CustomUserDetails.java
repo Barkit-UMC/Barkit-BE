@@ -16,6 +16,10 @@ public class CustomUserDetails implements UserDetails {
         return List.of(() -> user.getRole().toString());
     }
 
+    public Long getUserId() {
+        return user.getId();
+    }
+
     @Override
     public String getPassword() {
         return user.getPasswordHash();

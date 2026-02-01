@@ -47,6 +47,7 @@ public class UserConverter {
                 .toList();
     }
 
+    // User -> LoginResponseDto
     public static UserResponseDto.LoginResponseDto toLoginDTO(
             User user,
             String accessToken
@@ -55,5 +56,15 @@ public class UserConverter {
                 .userId(user.getId())
                 .accessToken(accessToken)
                 .build();
+    }
+
+    // User Entity -> PersonalInfoResponseDto
+    public static UserResponseDto.PersonalInfoResponseDto toPersonalInfoDto(User user) {
+        return new UserResponseDto.PersonalInfoResponseDto(
+                user.getName(),
+                user.getEmail(),
+                user.getPhoneNumber(),
+                user.getBirthDate()
+        );
     }
 }

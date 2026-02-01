@@ -53,4 +53,16 @@ public class UserQueryService {
         // DTO 조립
         return UserConverter.toLoginDTO(user, accessToken);
     }
+
+    // 개인정보 조회
+    public UserResponseDto.PersonalInfoResponseDto getPersonalInfo(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new UserException(UserErrorCode.NOT_FOUND));
+
+        if (user.getDeletedAt() != null) {
+            throw new UserException(UserErrorCode.NOT_FOUND);
+        }
+
+        return UserConverter.toPersonalInfoDto(user);
+    }
 }
