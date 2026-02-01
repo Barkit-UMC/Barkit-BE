@@ -12,10 +12,10 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -36,7 +36,7 @@ public class UserController implements UserControllerDocs{
     // 회원가입 API
     @PostMapping("/auth/signup")
     public ApiResponse<UserResponseDto.SignupResponseDto> signup(@RequestBody @Valid UserRequestDto.SignupRequestDto signupRequestDto) {
-        UserResponseDto.SignupResponseDto response = userCommandService.Signup(signupRequestDto);
+        UserResponseDto.SignupResponseDto response = userCommandService.signup(signupRequestDto);
         return ApiResponse.onSuccess(UserSuccessCode.CREATED, response);
     }
 
@@ -58,6 +58,18 @@ public class UserController implements UserControllerDocs{
         return ApiResponse.onSuccess(UserSuccessCode.PERSONAL_INFO_OK, response);
     }
 
+
+    // 생년월일 변경 API
+    @PatchMapping("/users/me/birth-date")
+    public ApiResponse<UserResponseDto.PersonalInfoResponseDto> updateBirthDate(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @Valid @RequestBody UserRequestDto.UpdateBirthDateRequestDto birthDateDto
+    ){
+        Long userId = userDetails.getUserId();
+        userCommandService.updateBirthDate(userId, birthDateDto.birthDate());
+        UserResponseDto.PersonalInfoResponseDto response = userQueryService.getPersonalInfo(userId);
+        return ApiResponse.onSuccess(UserSuccessCode.BIRTH_DATE_UPDATED, response);
+    }
 
 
 
