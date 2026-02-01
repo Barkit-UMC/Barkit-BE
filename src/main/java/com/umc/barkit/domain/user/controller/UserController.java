@@ -49,12 +49,11 @@ public class UserController implements UserControllerDocs{
     }
 
     // 개인정보 조회 API
-    @GetMapping("/users") // TODO: 추후 "/users/me"로 수정
+    @GetMapping("/users/me")
     public ApiResponse<UserResponseDto.PersonalInfoResponseDto> getPersonalInfo(
-            //@AuthenticationPrincipal CustomUserDetails userDetails
-            @RequestParam Long userId  // TODO: 추후 JWT에서 추출
+            @AuthenticationPrincipal CustomUserDetails userDetails
     ) {
-        //Long userId = userDetails.getUserId();
+        Long userId = userDetails.getUserId();
         UserResponseDto.PersonalInfoResponseDto response = userQueryService.getPersonalInfo(userId);
         return ApiResponse.onSuccess(UserSuccessCode.PERSONAL_INFO_OK, response);
     }
