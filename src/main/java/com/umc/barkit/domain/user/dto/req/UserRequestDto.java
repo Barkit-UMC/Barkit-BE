@@ -58,4 +58,16 @@ public class UserRequestDto {
             LocalDate birthDate
     ) {
     }
+
+    // 비밀번호 변경
+    public record UpdatePasswordRequestDto(
+            @NotNull
+            String currentPassword,
+
+            @NotNull
+            String newPassword,
+
+            @NotNull
+            String confirmPassword
+    ) {}
 }

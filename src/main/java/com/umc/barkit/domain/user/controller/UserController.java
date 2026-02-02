@@ -71,6 +71,14 @@ public class UserController implements UserControllerDocs{
         return ApiResponse.onSuccess(UserSuccessCode.BIRTH_DATE_UPDATED, response);
     }
 
+    @PatchMapping("/users/me/password")
+    public ApiResponse<Void> updatePassword(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @Valid @RequestBody UserRequestDto.UpdatePasswordRequestDto request
+    ) {
+        userCommandService.updatePassword(userDetails.getUserId(), request);
+        return ApiResponse.onSuccess(UserSuccessCode.PASSWORD_UPDATED, null);
+    }
 
 
 }
