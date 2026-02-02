@@ -50,4 +50,9 @@ public class User extends BaseEntity {
         this.deletedAt = LocalDateTime.now();
         this.status = UserStatus.INACTIVE;
     }
+
+    // 생년월일 변경
+    public void updateBirthDate(LocalDate birthDate) {
+        this.birthDate = birthDate;
+    }
 }

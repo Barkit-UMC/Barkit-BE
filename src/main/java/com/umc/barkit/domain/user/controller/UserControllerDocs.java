@@ -59,4 +59,18 @@ public interface UserControllerDocs {
     ApiResponse<UserResponseDto.PersonalInfoResponseDto> getPersonalInfo(
             @AuthenticationPrincipal CustomUserDetails userDetails
     );
+
+
+    @Operation(
+            summary = "생년월일 변경 API",
+            description = "개인정보 변경 페이지에서 사용자의 생년월일을 변경합니다.<br>" +
+                    "JWT 인증 방식으로 동작하며, Authorization 헤더의 Access Token에서 사용자 정보를 식별합니다.<br>"
+    )
+    @ApiResponses({
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "변경 성공")
+    })
+    ApiResponse<UserResponseDto.PersonalInfoResponseDto> updateBirthDate(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @Valid @RequestBody UserRequestDto.UpdateBirthDateRequestDto request
+    );
 }

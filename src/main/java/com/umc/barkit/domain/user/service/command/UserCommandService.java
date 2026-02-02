@@ -7,13 +7,18 @@ import com.umc.barkit.domain.user.entity.Term;
 import com.umc.barkit.domain.user.entity.User;
 import com.umc.barkit.domain.user.entity.mapping.UserTerm;
 import com.umc.barkit.domain.user.enums.Role;
+import com.umc.barkit.domain.user.exception.UserException;
+import com.umc.barkit.domain.user.exception.code.UserErrorCode;
 import com.umc.barkit.domain.user.repository.TermRepository;
 import com.umc.barkit.domain.user.repository.UserRepository;
 import com.umc.barkit.domain.user.repository.UserTermRepository;
+import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
@@ -25,16 +30,17 @@ public class UserCommandService {
     private final BCryptPasswordEncoder passwordEncoder;
 
     // 회원가입
-    public UserResponseDto.SignupResponseDto Signup(UserRequestDto.SignupRequestDto signupRequestDto){
+    @Transactional
+    public UserResponseDto.SignupResponseDto signup(UserRequestDto.SignupRequestDto signupRequestDto){
 
         // 이메일 중복 확인
         if (userRepository.existsByEmail(signupRequestDto.email())) {
-            throw new IllegalArgumentException("이미 등록된 이메일입니다");
+            throw new UserException(UserErrorCode.EMAIL_ALREADY_EXISTS);
         }
 
         // 비밀번호 확인
         if(!signupRequestDto.password().equals(signupRequestDto.confirmPassword())){
-            throw new IllegalArgumentException("비밀번호와 비밀번호 확인이 일치하지 않습니다");
+            throw new UserException(UserErrorCode.PASSWORD_MISMATCH);
         }
 
         // 비밀번호 암호화
@@ -55,5 +61,14 @@ public class UserCommandService {
 
         // DTO 응답
         return new UserResponseDto.SignupResponseDto(user.getId(), user.getEmail());
+    }
+
+    // 생년월일 변경
+    @Transactional
+    public void updateBirthDate(Long userId, LocalDate birthDate){
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new UserException(UserErrorCode.NOT_FOUND));
+
+        user.updateBirthDate(birthDate);
     }
 }
