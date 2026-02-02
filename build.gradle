@@ -7,12 +7,7 @@ plugins {
 group = 'com.umc'
 version = '0.0.1-SNAPSHOT'
 description = 'Barkit project for Spring Boot'
-
-java {
-	toolchain {
-		languageVersion = JavaLanguageVersion.of(21)
-	}
-}
+sourceCompatibility = '17'
 
 configurations {
 	compileOnly {
@@ -52,6 +47,12 @@ dependencies {
 	annotationProcessor "io.github.openfeign.querydsl:querydsl-apt:7.0:jpa"
 	annotationProcessor "jakarta.persistence:jakarta.persistence-api"
 	annotationProcessor "jakarta.annotation:jakarta.annotation-api"
+
+	// Jwt
+	implementation 'io.jsonwebtoken:jjwt-api:0.12.3'
+	implementation 'io.jsonwebtoken:jjwt-impl:0.12.3'
+	implementation 'io.jsonwebtoken:jjwt-jackson:0.12.3'
+	implementation 'org.springframework.boot:spring-boot-configuration-processor'
 }
 
 tasks.named('test') {

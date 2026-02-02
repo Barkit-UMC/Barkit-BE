@@ -47,4 +47,14 @@ public class MembershipBrandResponseDTO {
         private Long membershipBrandId;
         private String name;
     }
+
+    @Getter
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class SearchResultDTO {
+        private List<BrandSimpleDTO> brands;
+        private Long nextCursor;
+        private Boolean hasNext;
+    }
 }

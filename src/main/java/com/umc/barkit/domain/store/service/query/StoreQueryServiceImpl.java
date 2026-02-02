@@ -18,37 +18,47 @@ import com.umc.barkit.domain.store.external.google.dto.GoogleResDTO;
 import com.umc.barkit.domain.store.repository.StoreBrandMembershipBrandRepository;
 import com.umc.barkit.domain.store.repository.StoreBrandRepository;
 import com.umc.barkit.domain.store.repository.StoreRepository;
+import com.umc.barkit.domain.store.repository.projection.BrandIdNameProjection;
+import com.umc.barkit.domain.store.repository.projection.BrandMembershipProjection;
 import com.umc.barkit.domain.store.repository.projection.ViewCountProjection;
+import com.umc.barkit.domain.store.service.command.StoreCommandService;
+import com.umc.barkit.domain.store.util.StoreUtil;
 import lombok.RequiredArgsConstructor;
+
+
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
-
-
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
-import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.*;
-import java.util.function.Function;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class StoreQueryServiceImpl implements StoreQueryService{
 
     private final MembershipBrandRepository membershipBrandRepository;
     private final StoreBrandMembershipBrandRepository storeBrandMembershipBrandRepository;
     private final StoreRepository storeRepository;
     private final StoreBrandRepository storeBrandRepository;
+
     private final GoogleMapSearchClient googleClient;
+    private final StoreCommandService storeCommandService;
 
-
-    @Value("${google.api.key}")
-    private String googleApiKey;
-
-    private final WebClient googleWebClient;
+    private final StoreUtil storeUtil;
 
     private static final double MAX_DISTANCE_KM = 5.0;
 
+    @Qualifier("googleSearchExecutor")
+    private final Executor googleSearchExecutor;
+
+    //목록 조회(멤버십/매장)
     @Override
     public StoreResDTO.SearchedStoreSlice search(
             StoreReqDTO.SearchReq req,
@@ -58,6 +68,8 @@ public class StoreQueryServiceImpl implements StoreQueryService{
             int cursor,
             int size
     ) {
+
+        long t0 = System.nanoTime();
 
         List<StoreResDTO.SearchedStore> fullResult;
 
@@ -75,9 +87,17 @@ public class StoreQueryServiceImpl implements StoreQueryService{
             );
         } else if (isStoreBrand(req.query())) {
             // 매장명으로 검색 로직 실행
-            fullResult = List.of();
+            fullResult = searchByBrand(
+                    req.query(),
+                    distanceType,
+                    category,
+                    req.userLat(),
+                    req.userLng(),
+                    req.centerLat(),
+                    req.centerLng()
+            );
         } else {
-            //검색 결과 없음 오류 발생 or 빈리스트 반환
+            //검색 결과 없으면(멤버십도 매장명도 아니면) 빈리스트 반환
             fullResult = List.of();
         }
 
@@ -95,8 +115,92 @@ public class StoreQueryServiceImpl implements StoreQueryService{
         boolean hasNext = to < deduped.size();
         int nextCursor = to;
 
+
+        long elapsedMs = (System.nanoTime() - t0) / 1_000_000;
+        log.info("소요 시간 : " + elapsedMs);
+
         return new StoreResDTO.SearchedStoreSlice(page, hasNext, nextCursor);
 
+    }
+
+    @Transactional
+    @Override
+    public StoreResDTO.StoreDetail detail(String googleId, Double userLat, Double userLng) {
+
+        // DB 조회
+        Store store = storeRepository.findByGoogleId(googleId)
+                .orElseThrow(() -> new StoreException(StoreErrorCode.STORE4001));
+
+        // 조회수
+        store.addViewCount();
+
+        // Google Places API 호출
+        GooglePlaceDTO.Place g = googleClient.getPlaceDetail(googleId);
+
+
+        // 위치 계산
+        double storeLat = g.location().latitude();
+        double storeLng = g.location().longitude();
+
+        StoreResDTO.StoreLocation location = StoreResDTO.StoreLocation.builder()
+                .lat(storeLat)
+                .lng(storeLng)
+                .build();
+
+        double distance = storeUtil.round2(storeUtil.distanceKm(userLat, userLng, storeLat, storeLng));
+
+        // 영업시간 정보
+        boolean isOpen = g.currentOpeningHours() != null && g.currentOpeningHours().openNow();
+        List<String> weekdayText =
+                g.currentOpeningHours() != null ? g.currentOpeningHours().weekdayDescriptions() : null;
+
+        StoreResDTO.StoreHourInfo hourInfo = StoreResDTO.StoreHourInfo.builder()
+                .weekdayText(weekdayText)
+                .isOpen(isOpen)
+                .build();
+
+
+        // 사진 URL 변환
+        List<StoreResDTO.StorePhotoInfo> photos =
+                (g.photos() == null) ? List.of() :
+                        g.photos().stream()
+                                .map(p -> StoreResDTO.StorePhotoInfo.builder()
+                                        .url(googleClient.buildPhotoMediaUrl(p.name(), 400))
+                                        .width(p.widthPx())
+                                        .height(p.heightPx())
+                                        .build())
+                                .toList();
+
+
+        // 연락 정보
+        StoreResDTO.StoreContact contact = StoreResDTO.StoreContact.builder()
+                .address(g.formattedAddress())
+                .phoneNumber(g.nationalPhoneNumber())
+                .homepage(g.websiteUri())
+                .build();
+
+
+        // 멤버십 조회
+        List<StoreBrandMembershipBrand> membershipEntities =
+                storeBrandMembershipBrandRepository.findByStoreBrandId(store.getBrand().getId());
+
+        List<StoreResDTO.MembershipInfo> membershipInfos = membershipEntities.stream()
+                .map(m -> StoreResDTO.MembershipInfo.builder()
+                        .name(m.getMembershipBrand().getName())
+                        .logoUrl(m.getMembershipBrand().getLogoUrl())
+                        .build())
+                .toList();
+
+        // DTO 조립
+        return StoreResDTO.StoreDetail.builder()
+                .name(g.displayName() != null ? g.displayName().text() : "이름 정보 없음")
+                .distance(distance)
+                .location(location)
+                .contact(contact)
+                .hourInfo(hourInfo)
+                .membership(membershipInfos)
+                .photos(photos)
+                .build();
     }
 
     private List<StoreResDTO.SearchedStore> deduplicateByGoogleId(List<StoreResDTO.SearchedStore> list) {
@@ -161,12 +265,111 @@ public class StoreQueryServiceImpl implements StoreQueryService{
 
     //매장명인지 검증
     private Boolean isStoreBrand(String query) {
-        return null;
+        return storeBrandRepository.existsByNameContainedInQuery(query);
     }
 
-    //매장명 검색 로직(seoyeon)
+    //매장명 검색 로직
+    /*
+    올리브영만 검색 -> 근처 검색
+    올리브영 성수점 검색 -> 근처 검색 실행 -> 결과 없음 -> 전체 검색
+     */
+    private List<StoreResDTO.SearchedStore> searchByBrand(
+            String query,
+            DistanceType distanceType,
+            Category category,
+            Double userLat,
+            Double userLng,
+            Double centerLat,
+            Double centerLng) {
 
-    //멤버십명 검색 로직(remy)
+        StoreBrand matchedBrand = storeBrandRepository.findMatchedBrand(query).get();
+
+        // 매칭되는 브랜드 없으면 빈 리스트 반환
+        if (matchedBrand == null) {
+            return List.of();
+        }
+
+        // 카테고리 체크
+        if (category != Category.ALL && matchedBrand.getCategory() != category) {
+            return List.of();
+        }
+
+        // 근처 검색
+        List<StoreResDTO.SearchedStore> near = searchBrandNearby(
+                query, matchedBrand, distanceType, userLat, userLng, centerLat, centerLng
+        );
+
+        if (near != null && !near.isEmpty()) {
+            return near;
+        }
+
+        // 근처 결과가 없으면 전체 검색
+        return searchBrandGlobal(
+                query, matchedBrand, userLat, userLng
+        );
+    }
+
+    // 근처 매장 검색
+    private List<StoreResDTO.SearchedStore> searchBrandNearby(
+            String query,
+            StoreBrand matchedBrand,
+            DistanceType distanceType,
+            Double userLat,
+            Double userLng,
+            Double centerLat,
+            Double centerLng) {
+
+        Double sendLat = (distanceType == DistanceType.CURRENT) ? userLat : centerLat;
+        Double sendLng = (distanceType == DistanceType.CURRENT) ? userLng : centerLng;
+
+        List<GoogleResDTO.Place> places = googleClient.searchText(query, sendLat, sendLng);
+        if (places == null || places.isEmpty()) return List.of();
+
+        List<StoreResDTO.SearchedStoreMembership> membershipsDTO =
+                findMembershipsForStoreBrand(matchedBrand.getId());
+
+        // 검색 반경 5km 필터 적용
+        return storeCommandService.saveAndMap(
+                matchedBrand,
+                places,
+                userLat,
+                userLng,
+                sendLat,
+                sendLng,
+                true,
+                membershipsDTO
+        );
+
+    }
+
+    // 전체 검색
+    private List<StoreResDTO.SearchedStore> searchBrandGlobal(
+            String query,
+            StoreBrand matchedBrand,
+            Double userLat,
+            Double userLng
+    ) {
+        // 위치 없이 호출
+        List<GoogleResDTO.Place> places = googleClient.searchText(query);
+        if (places == null || places.isEmpty()) return List.of();
+
+        List<StoreResDTO.SearchedStoreMembership> membershipsDTO =
+                findMembershipsForStoreBrand(matchedBrand.getId());
+
+        // 검색 반경 5km 필터 미적용
+        return storeCommandService.saveAndMap(
+                matchedBrand,
+                places,
+                userLat,
+                userLng,
+                userLat,
+                userLng,
+                false,
+                membershipsDTO
+        );
+    }
+
+    //멤버십명 검색 로직
     private List<StoreResDTO.SearchedStore> searchByMembership(
             String query,
             DistanceType distanceType,
@@ -182,128 +385,97 @@ public class StoreQueryServiceImpl implements StoreQueryService{
         List<Long> storeBrandIds =
                 storeBrandMembershipBrandRepository.findStoreBrandIdsByMembershipBrandId(membership.get().getId());
 
-        List<String> storeNames = new ArrayList<>();
-        List<Long> filteredStoreBrandIds = new ArrayList<>();
-        List<StoreResDTO.SearchedStore> result = new ArrayList<>();
+        if (storeBrandIds == null || storeBrandIds.isEmpty()) return List.of();
 
-        //카테고리 구분
-        categoryChecking(category, storeBrandIds, storeNames, filteredStoreBrandIds);
+        // 카테고리 필터링 (IN 절 사용해서 한번에 조회)
+        List<BrandIdNameProjection> idNames =
+                storeBrandRepository.findIdNameByIdsAndCategory(storeBrandIds, category);
 
-        /*카테고리 구분 후 일치하는 겁색결과가 없어서
-        storeNames, filteredStoreBrandIds 빈 리스트 일 때*/
-        if (storeNames.isEmpty() && filteredStoreBrandIds.isEmpty()) {
-            return result;
-        }
+        // 매칭되는 카테고리 없으면 빈 리스트 반환
+        if (idNames == null || idNames.isEmpty()) return List.of();
 
-        //외부 API 호출 및 Store 저장
+        List<Long> filteredBrandIds = idNames.stream().map(BrandIdNameProjection::getId).toList();
+        List<String> storeNames = idNames.stream().map(BrandIdNameProjection::getName).toList();
+
+        // StoreBrand도 한번에 가져오기
+        Map<Long, StoreBrand> storeBrandMap =
+                storeBrandRepository.findAllById(filteredBrandIds).stream()
+                        .collect(Collectors.toMap(StoreBrand::getId, sb -> sb));
+
+        // 멤버십 DTO도 한 번에 가져오기
+        Map<Long, List<StoreResDTO.SearchedStoreMembership>> membershipsByBrandId =
+                preloadMembershipsDTO(filteredBrandIds);
+
+        // 구글 api 호출 시 기준이 될 위도, 경도 정하기
+        Double sendLat = (distanceType == DistanceType.CURRENT) ? userLat : centerLat;
+        Double sendLng = (distanceType == DistanceType.CURRENT) ? userLng : centerLng;
+
+        // 구글 api 호출 병렬 처리
+        List<CompletableFuture<GooglePlaceDTO.BrandPlacesResult>> futures = new ArrayList<>();
+
         for (int i = 0; i < storeNames.size(); i++) {
             String storeName = storeNames.get(i);
-            Long storeBrandId = filteredStoreBrandIds.get(i);
+            Long storeBrandId = filteredBrandIds.get(i);
 
-            Double sendLat = (distanceType == DistanceType.CURRENT) ? userLat : centerLat;
-            Double sendLng = (distanceType == DistanceType.CURRENT) ? userLng : centerLng;
-
-            //매장명으로 구글 API 호출
-            List<GoogleResDTO.Place> places = googleClient.searchText(storeName, sendLat, sendLng);
-
-            // store 저장 + StoreResDTO 매핑해서 결과에 합치기
-            result.addAll(saveStoreAndReturnResDTO(storeBrandId, places, userLat, userLng, sendLat, sendLng));
+            futures.add(CompletableFuture.supplyAsync(() -> {
+                        List<GoogleResDTO.Place> places = googleClient.searchText(storeName, sendLat, sendLng);
+                        return new GooglePlaceDTO.BrandPlacesResult(storeBrandId, storeName, places);
+                    }, googleSearchExecutor)
+                    .orTimeout(3, TimeUnit.SECONDS)
+                    .exceptionally(ex -> new GooglePlaceDTO.BrandPlacesResult(storeBrandId, storeName, List.of())));
         }
 
-        return result;
-    }
-
-    //카테고리 구분 메서드
-    private void categoryChecking(Category category, List<Long> storeBrandIds, List<String> storeNames, List<Long> filteredStoreBrandIds) {
-        if (category != Category.ALL) {
-            for (Long storeBrandId : storeBrandIds) {
-                Optional<String> storeName = storeBrandRepository.findNameByIdAndCategory(storeBrandId, category);
-                if (storeName.isPresent()) {
-                    storeNames.add(storeName.get());
-                    filteredStoreBrandIds.add(storeBrandId);
-                } else {
-                    return; // 빈 리스트
-                }
-            }
-        } else if (category == Category.ALL) {
-            for (Long storeBrandId : storeBrandIds) {
-                storeNames.add(storeBrandRepository.findNameById(storeBrandId));
-                filteredStoreBrandIds.add(storeBrandId);
-            }
-        }
-    }
-
-    private List<StoreResDTO.SearchedStore> saveStoreAndReturnResDTO(
-            Long storeBrandId,
-            List<GoogleResDTO.Place> places,
-            Double userLat,
-            Double userLng,
-            Double sendLat,
-            Double sendLng
-    ) {
-        if (places == null || places.isEmpty()) return List.of();
-
-        StoreBrand storeBrand = storeBrandRepository.findById(storeBrandId)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 store_brand"));
-
-        List<StoreResDTO.SearchedStoreMembership> membershipsDTO = findMembershipsForStoreBrand(storeBrandId);
-
-        Map<String, GoogleResDTO.Place> uniquePlacesById = new LinkedHashMap<>();
-
-        for (GoogleResDTO.Place p : places) {
-            if (p == null || p.id() == null) continue;
-
-            if (p.location() == null) continue;
-
-            uniquePlacesById.putIfAbsent(p.id(), p);
-        }
-
-        if (uniquePlacesById.isEmpty()) return List.of();
-
-        List<String> googleIds = new ArrayList<>(uniquePlacesById.keySet());
-
-        Map<String, Store> existingByGoogleId =
-                storeRepository.findAllByGoogleIdIn(googleIds).stream()
-                        .collect(Collectors.toMap(Store::getGoogleId, Function.identity()));
-
-        // DB에 없는 googleId만 모아서 한 번에 저장
-        List<Store> toSave = new ArrayList<>();
-        for (String gid : googleIds) {
-            if (!existingByGoogleId.containsKey(gid)) {
-                toSave.add(Store.builder()
-                        .googleId(gid)
-                        .brand(storeBrand)
-                        .build());
-            }
-        }
-
-        if (!toSave.isEmpty()) {
-            List<Store> saved = storeRepository.saveAll(toSave);
-            for (Store s : saved) {
-                existingByGoogleId.put(s.getGoogleId(), s);
-            }
-        }
+        List<GooglePlaceDTO.BrandPlacesResult> brandResults = futures.stream()
+                .map(CompletableFuture::join)
+                .toList();
 
 
         List<StoreResDTO.SearchedStore> result = new ArrayList<>();
 
-        for (String gid : googleIds) {
-            GoogleResDTO.Place p = uniquePlacesById.get(gid);
-            Store store = existingByGoogleId.get(gid);
-            if (p == null || store == null) continue;
+        // api 호출 결과로 가져온 매장 db에 없으면 저장
+        for (GooglePlaceDTO.BrandPlacesResult r : brandResults) {
+            if (r.places() == null || r.places().isEmpty()) continue;
 
-            double storeLat = p.location().latitude();
-            double storeLng = p.location().longitude();
+            StoreBrand sb = storeBrandMap.get(r.storeBrandId());
+            if (sb == null) continue;
 
-            double distKmFromSendPoint = distanceKm(sendLat, sendLng, storeLat, storeLng);
-            if (distKmFromSendPoint > MAX_DISTANCE_KM) continue;
+            List<StoreResDTO.SearchedStoreMembership> membershipsDTO =
+                    membershipsByBrandId.getOrDefault(r.storeBrandId(), List.of());
 
-            result.add(mapToSearchedStore(p, store.getId(), membershipsDTO, userLat, userLng));
-
+            result.addAll(storeCommandService.saveAndMap(
+                    sb,
+                    r.places(),
+                    userLat,
+                    userLng,
+                    sendLat,
+                    sendLng,
+                    true,
+                    membershipsDTO
+            ));
         }
 
         return result;
     }
+
+
+    private Map<Long, List<StoreResDTO.SearchedStoreMembership>> preloadMembershipsDTO(List<Long> storeBrandIds) {
+        List<BrandMembershipProjection> rows =
+                storeBrandMembershipBrandRepository.findMembershipsByStoreBrandIds(storeBrandIds);
+
+        if (rows == null || rows.isEmpty()) return Map.of();
+
+        Map<Long, List<StoreResDTO.SearchedStoreMembership>> map = new HashMap<>();
+        for (BrandMembershipProjection r : rows) {
+            map.computeIfAbsent(r.getStoreBrandId(), k -> new ArrayList<>())
+                    .add(StoreResDTO.SearchedStoreMembership.builder()
+                            .id(r.getMembershipId())
+                            .name(r.getMembershipName())
+                            .logoUrl(r.getMembershipLogoUrl())
+                            .build());
+        }
+        return map;
+    }
+
 
     private List<StoreResDTO.SearchedStoreMembership> findMembershipsForStoreBrand(Long storeBrandId) {
         List<Long> membershipIds =
@@ -320,149 +492,8 @@ public class StoreQueryServiceImpl implements StoreQueryService{
                 .map(m -> StoreResDTO.SearchedStoreMembership.builder()
                         .id(m.getId())
                         .name(m.getName())
-                        .logoUrl(m.getLogoUrl()) // MembershipBrand에 logoUrl 필드가 있다고 가정
+                        .logoUrl(m.getLogoUrl())
                         .build())
                 .toList();
     }
-
-
-    //응답 DTO 매핑
-    private StoreResDTO.SearchedStore mapToSearchedStore(
-            GoogleResDTO.Place p,
-            Long storeId,
-            List<StoreResDTO.SearchedStoreMembership> memberships,
-            Double userLat,
-            Double userLng
-    ) {
-        double storeLat = p.location().latitude();
-        double storeLng = p.location().longitude();
-
-        Double distanceKm = round2(distanceKm(userLat, userLng, storeLat, storeLng));
-
-        //일단 구글 길찾기로
-        String directionUrl = buildGoogleDirectionUrl(p.id(), storeLat, storeLng);
-
-
-        return StoreResDTO.SearchedStore.builder()
-                .storeId(storeId)
-                .googleId(p.id())
-                .name(p.displayName())
-                .location(StoreResDTO.SearchedStoreLocation.builder()
-                        .lat(storeLat)
-                        .lng(storeLng)
-                        .build())
-                .address(p.formattedAddress())
-                .phone(p.nationalPhoneNumber())
-                .memberships(memberships)
-                .distanceKm(distanceKm)
-                .directionUrl(directionUrl)
-                .build();
-    }
-
-    //구글 길찾기 url
-    private String buildGoogleDirectionUrl(String placeId, double lat, double lng) {
-        return "https://www.google.com/maps/dir/?api=1"
-                + "&destination=" + lat + "," + lng
-                + "&destination_place_id=" + java.net.URLEncoder.encode(placeId, java.nio.charset.StandardCharsets.UTF_8);
-    }
-
-    private double round2(double v) {
-        return Math.round(v * 100) / 100.0;
-    }
-
-    private static final double EARTH_RADIUS_KM = 6371.0;
-
-    //위도, 경도로 사용자 현재위치와 매장 사이의 거리(km) 계산
-    private double distanceKm(double lat1, double lng1, double lat2, double lng2) {
-        double dLat = Math.toRadians(lat2 - lat1);
-        double dLng = Math.toRadians(lng2 - lng1);
-
-        double a = Math.sin(dLat / 2) * Math.sin(dLat / 2)
-                + Math.cos(Math.toRadians(lat1))
-                * Math.cos(Math.toRadians(lat2))
-                * Math.sin(dLng / 2) * Math.sin(dLng / 2);
-
-        double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-        return EARTH_RADIUS_KM * c;
-    }
-
-
-    @Override
-    public StoreResDTO.StoreDetail detail(String googleId, Double userLat, Double userLng) {
-
-        // DB 조회
-        Store store = storeRepository.findByGoogleId(googleId)
-                .orElseThrow(() -> new StoreException(StoreErrorCode.STORE4001));
-
-        // Google Places API 호출
-        GooglePlaceDTO.Place g = googleClient.getPlaceDetail(googleId);
-
-
-        // 위치 계산
-        double storeLat = g.location().latitude();
-        double storeLng = g.location().longitude();
-
-        StoreResDTO.StoreLocation location = StoreResDTO.StoreLocation.builder()
-                .lat(storeLat)
-                .lng(storeLng)
-                .build();
-
-        double distance = round2(distanceKm(userLat, userLng, storeLat, storeLng));
-
-        // 영업시간 정보
-        boolean isOpen = g.currentOpeningHours() != null && g.currentOpeningHours().openNow();
-        List<String> weekdayText =
-                g.currentOpeningHours() != null ? g.currentOpeningHours().weekdayDescriptions() : null;
-
-        StoreResDTO.StoreHourInfo hourInfo = StoreResDTO.StoreHourInfo.builder()
-                .weekdayText(weekdayText)
-                .isOpen(isOpen)
-                .build();
-
-
-        // 사진 URL 변환
-        List<StoreResDTO.StorePhotoInfo> photos =
-                (g.photos() == null) ? List.of() :
-                        g.photos().stream()
-                                .map(p -> StoreResDTO.StorePhotoInfo.builder()
-                                        .url(googleClient.buildPhotoMediaUrl(p.name(), 400))
-                                        .width(p.widthPx())
-                                        .height(p.heightPx())
-                                        .build())
-                                .toList();
-
-
-        // 연락 정보
-        StoreResDTO.StoreContact contact = StoreResDTO.StoreContact.builder()
-                .address(g.formattedAddress())
-                .phoneNumber(g.nationalPhoneNumber())
-                .homepage(g.websiteUri())
-                .build();
-
-
-        // 멤버십 조회
-        List<StoreBrandMembershipBrand> membershipEntities =
-                storeBrandMembershipBrandRepository.findByStoreBrandId(store.getBrand().getId());
-
-        List<StoreResDTO.MembershipInfo> membershipInfos = membershipEntities.stream()
-                .map(m -> StoreResDTO.MembershipInfo.builder()
-                        .name(m.getMembershipBrand().getName())
-                        .logoUrl(m.getMembershipBrand().getLogoUrl())
-                        .build())
-                .toList();
-
-        // DTO 조립
-        return StoreResDTO.StoreDetail.builder()
-                .name(g.displayName() != null ? g.displayName().text() : "이름 정보 없음")
-                .distance(distance)
-                .location(location)
-                .contact(contact)
-                .hourInfo(hourInfo)
-                .membership(membershipInfos)
-                .photos(photos)
-                .build();
-    }
-
-
-
 }

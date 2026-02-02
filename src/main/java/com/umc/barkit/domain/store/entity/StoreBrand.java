@@ -26,4 +26,7 @@ public class StoreBrand extends BaseEntity {
     @Column(name = "category", nullable = false)
     @Enumerated(EnumType.STRING)
     private Category category;
+
+    @Column(name = "logo_url", length = 255)
+    private String logoUrl;
 }

@@ -26,8 +26,7 @@ public class GoogleResDTO {
     ) {}
 
     public record DisplayName(
-            String text,
-            String languageCode
+            String text
     ) {}
 
     public record LatLng(
