@@ -1,6 +1,8 @@
 package com.umc.barkit.domain.store.dto.google;
 
 import java.util.List;
+
+import com.umc.barkit.domain.store.external.google.dto.GoogleResDTO;
 import lombok.Builder;
 
 public class GooglePlaceDTO {
@@ -37,4 +39,9 @@ public class GooglePlaceDTO {
             Integer widthPx,
             Integer heightPx
     ) {}
+
+    public record BrandPlacesResult(
+            Long storeBrandId,
+            String storeName,
+            List<GoogleResDTO.Place> places) {}
 }
