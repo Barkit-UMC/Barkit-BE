@@ -11,4 +11,7 @@ public interface UserMembershipBrandQueryService {
             Long cursor,
             Integer limit
     );
+
+    UserMembershipBrandResponseDTO.UserMembershipBarcodeDTO getUserMembershipBarcode(Long userId,Long membershipBrandId);
+
 }

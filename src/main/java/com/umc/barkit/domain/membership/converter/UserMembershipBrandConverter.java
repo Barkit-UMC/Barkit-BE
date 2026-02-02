@@ -1,14 +1,19 @@
 package com.umc.barkit.domain.membership.converter;
 
+
 import com.umc.barkit.domain.membership.dto.response.UserMembershipBrandResponseDTO;
 import com.umc.barkit.domain.membership.dto.request.UserMembershipBrandRequestDTO;
 import com.umc.barkit.domain.membership.entity.MembershipBrand;
 import com.umc.barkit.domain.membership.entity.UserMembershipBrand;
+import com.umc.barkit.domain.membership.exception.MembershipException;
+import com.umc.barkit.domain.membership.exception.code.MembershipErrorCode;
 import com.umc.barkit.domain.membership.repository.MembershipBrandRepository;
 import com.umc.barkit.global.apiPayload.code.GeneralErrorCode;
 import com.umc.barkit.global.apiPayload.exception.GeneralException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
+import com.umc.barkit.domain.membership.dto.response.MembershipBrandResponseDTO;
+import com.umc.barkit.domain.membership.entity.UserMembershipBrand;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -73,4 +78,25 @@ public class UserMembershipBrandConverter {
                 .barcodeRawValue(userMembershipBrand.getBarcodeRawValue())
                 .build();
     }
+
+    //MembershipBrand Entity List -> BarcodeDTO 변환
+    public UserMembershipBrandResponseDTO.UserMembershipBarcodeDTO toBarcodeDTO(UserMembershipBrand umb){
+
+        MembershipBrand brand = membershipBrandRepository.findById(umb.getMembershipBrandId())
+                .orElseThrow(() -> new MembershipException(MembershipErrorCode.BRAND4001));
+
+        return UserMembershipBrandResponseDTO.UserMembershipBarcodeDTO.builder()
+                .membershipNumber(umb.getMembershipNumber())
+                .barcodeRawValue(umb.getBarcodeRawValue())
+                .logoUrl(brand.getLogoUrl())
+                .brandName(brand.getName())
+                .build();
+    }
 }
+
+
+
+
+
+
+

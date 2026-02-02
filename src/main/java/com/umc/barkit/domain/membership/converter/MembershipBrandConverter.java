@@ -2,6 +2,7 @@ package com.umc.barkit.domain.membership.converter;
 
 import com.umc.barkit.domain.membership.dto.response.MembershipBrandResponseDTO;
 import com.umc.barkit.domain.membership.entity.MembershipBrand;
+import com.umc.barkit.domain.membership.entity.UserMembershipBrand;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -57,6 +58,7 @@ public class MembershipBrandConverter {
                 .build();
     }
 
+
     public static MembershipBrandResponseDTO.SearchResultDTO toSearchResultDTO(
             List<MembershipBrand> brands,
             Long nextCursor,
@@ -70,4 +72,5 @@ public class MembershipBrandConverter {
                 .hasNext(hasNext)
                 .build();
     }
+
 }
