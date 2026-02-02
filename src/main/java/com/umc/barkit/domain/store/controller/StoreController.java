@@ -11,12 +11,15 @@ import com.umc.barkit.domain.store.exception.code.StoreSuccessCode;
 import com.umc.barkit.domain.store.service.query.StoreQueryService;
 import com.umc.barkit.global.apiPayload.ApiResponse;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @RestController
 @RequiredArgsConstructor
+@Slf4j
 public class StoreController implements StoreControllerDocs{
 
     private final StoreQueryService storeQueryService;
@@ -30,6 +33,7 @@ public class StoreController implements StoreControllerDocs{
             int cursor,
             int size
     ) {
+        LocalDateTime startTime = LocalDateTime.now();
         if (distanceType == DistanceType.CENTER && (req.centerLat() == null || req.centerLng() == null)) {
             throw new StoreException(StoreErrorCode.CENTER_LOCATION_REQUIRED);
         }
@@ -40,7 +44,6 @@ public class StoreController implements StoreControllerDocs{
                 code,
                 storeQueryService.search(req, distanceType, category, sort, cursor, size)
         );
-
     }
 
     @Override
