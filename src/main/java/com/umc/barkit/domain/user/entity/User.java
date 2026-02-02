@@ -55,4 +55,9 @@ public class User extends BaseEntity {
     public void updateBirthDate(LocalDate birthDate) {
         this.birthDate = birthDate;
     }
+
+    // 비밀번호 변경
+    public void updatePassword(String encodedPassword) {
+        this.passwordHash = encodedPassword;
+    }
 }

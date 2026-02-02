@@ -73,4 +73,18 @@ public interface UserControllerDocs {
             @AuthenticationPrincipal CustomUserDetails userDetails,
             @Valid @RequestBody UserRequestDto.UpdateBirthDateRequestDto request
     );
+
+
+    @Operation(
+            summary = "비밀번호 변경 API",
+            description = "JWT 인증된 사용자가 자신의 비밀번호를 변경합니다."
+    )
+    @ApiResponses({
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "비밀번호 변경 성공"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "비밀번호 검증 실패 (현재 비밀번호 불일치, 새 비밀번호 불일치 등)")
+    })
+    ApiResponse<Void> updatePassword(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @Valid @RequestBody UserRequestDto.UpdatePasswordRequestDto request
+    );
 }

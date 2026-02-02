@@ -14,7 +14,6 @@ import com.umc.barkit.domain.user.repository.UserRepository;
 import com.umc.barkit.domain.user.repository.UserTermRepository;
 import java.time.LocalDate;
 import java.util.List;
-import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -70,5 +69,37 @@ public class UserCommandService {
                 .orElseThrow(() -> new UserException(UserErrorCode.NOT_FOUND));
 
         user.updateBirthDate(birthDate);
+    }
+
+    // 비밀번호 변경
+    @Transactional
+    public void updatePassword(Long userId, UserRequestDto.UpdatePasswordRequestDto request){
+        // 현재 비밀번호 검증
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new UserException(UserErrorCode.NOT_FOUND));
+
+        // 현재 비밀번호와 입력한 비밀번호 비교
+        if (!passwordEncoder.matches(request.currentPassword(), user.getPasswordHash())) {
+            throw new UserException(UserErrorCode.INVALID_CURRENT_PASSWORD); // 비밀번호 불일치
+        }
+
+        // 새 비밀번호와 확인 비밀번호 일치 여부
+        if (!request.newPassword().equals(request.confirmPassword())) {
+            throw new UserException(UserErrorCode.PASSWORD_MISMATCH); // 새 비밀번호 불일치
+        }
+
+        if (request.newPassword().length() < 8 || request.newPassword().length() > 12) {
+            throw new UserException(UserErrorCode.INVALID_PASSWORD); // 비밀번호 길이 오류
+        }
+
+        if (!request.newPassword().matches(".*[a-zA-Z].*") || !request.newPassword().matches(".*[!@#$%^&*].*")) {
+            throw new UserException(UserErrorCode.INVALID_PASSWORD); // 영문자 + 특수문자 조합 오류
+        }
+
+        // 새 비밀번호 암호화
+        String encodedNewPassword = passwordEncoder.encode(request.newPassword());
+
+        // 비밀번호 업데이트
+        user.updatePassword(encodedNewPassword);
     }
 }
