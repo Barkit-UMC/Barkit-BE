@@ -8,11 +8,10 @@ import com.umc.barkit.domain.membership.repository.UserMembershipBrandRepository
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import com.umc.barkit.global.auth.details.CustomUserDetails;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 
-import java.util.*;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
@@ -24,14 +23,15 @@ public class HomeDashboardServiceImpl implements HomeDashboardService {
     private final MembershipBrandRepository membershipBrandRepository;
 
     @Override
-    public HomeDashboardResponse.DashboardDTO getDashboard() {
-
-        Long userId = getCurrentUserId();
+    public HomeDashboardResponse.DashboardDTO getDashboard(Long userId) {
 
         /**
-         * 1 사용자 보유 멤버십 조회
-         * - 대표 멤버십(isMain = true) 우선
-         * - 이후 등록순(createdAt ASC)
+         * 사용자 보유 멤버십 정렬 규칙
+         *
+         * 1. 대표 멤버십(isMain = true) 우선 노출
+         * 2. 동일 조건 내에서는 등록순(createdAt ASC)
+         *
+         * → 홈 화면에서 대표 멤버십을 가장 먼저 보여주기 위한 UX 정책
          */
         List<UserMembershipBrand> userMemberships =
                 userMembershipBrandRepository.findByUserId(userId)
@@ -50,7 +50,7 @@ public class HomeDashboardServiceImpl implements HomeDashboardService {
                         .toList();
 
         /**
-         * 2. MembershipBrand 조회 (ID → Entity 매핑)
+         * MembershipBrand 조회 (ID → Entity 매핑)
          */
         Map<Long, MembershipBrand> membershipBrandMap =
                 membershipBrandRepository.findAllById(
@@ -65,7 +65,7 @@ public class HomeDashboardServiceImpl implements HomeDashboardService {
                         ));
 
         /**
-         * 3. 정렬된 userMembership 순서를 유지한 채 DTO 변환
+         * DTO 변환
          */
         List<HomeDashboardResponse.MembershipSummaryDTO> membershipDTOs =
                 userMemberships.stream()
@@ -84,15 +84,5 @@ public class HomeDashboardServiceImpl implements HomeDashboardService {
         return HomeDashboardResponse.DashboardDTO.builder()
                 .memberships(membershipDTOs)
                 .build();
-    }
-
-    private Long getCurrentUserId() {
-        Authentication authentication =
-                SecurityContextHolder.getContext().getAuthentication();
-
-        CustomUserDetails userDetails =
-                (CustomUserDetails) authentication.getPrincipal();
-
-        return userDetails.getUserId();
     }
 }

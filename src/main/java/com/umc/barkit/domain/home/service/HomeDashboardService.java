@@ -4,5 +4,5 @@ import com.umc.barkit.domain.home.dto.response.HomeDashboardResponse;
 
 public interface HomeDashboardService {
 
-    HomeDashboardResponse.DashboardDTO getDashboard();
+    HomeDashboardResponse.DashboardDTO getDashboard(Long userId);
 }
