@@ -16,4 +16,7 @@ public interface UserMembershipBrandRepositoryCustom {
 
     // 멤버십 브랜드 중복 체크
     boolean existsByUserIdAndMembershipBrandId(Long userId, Long membershipBrandId);
+
+    // 대표 멤버십 개수 조회
+    int countMainByUserId(Long userId);
 }
