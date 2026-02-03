@@ -12,7 +12,6 @@ public class UserMembershipBrandRequestDTO {
     @NoArgsConstructor
     @AllArgsConstructor
     public static class RegisterMembershipDTO {
-        private String membershipNumber;   // 멤버십 번호
-        private String barcodeRawValue;    // 바코드 문자열 (프론트에서 추출)
+        private String membershipNumber;
     }
 }

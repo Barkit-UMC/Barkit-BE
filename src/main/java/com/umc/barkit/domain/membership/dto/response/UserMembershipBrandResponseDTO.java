@@ -36,6 +36,5 @@ public class UserMembershipBrandResponseDTO {
     public static class RegisterMembershipResultDTO {
         private Long userMembershipBrandId;
         private String membershipNumber;
-        private String barcodeRawValue;
     }
 }

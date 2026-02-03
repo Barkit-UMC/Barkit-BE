@@ -36,7 +36,6 @@ public class UserMembershipBrandConverter {
     }
 
     public UserMembershipBrandResponseDTO.UserBrandDTO toUserBrandDTO(UserMembershipBrand userBrand) {
-        // MembershipBrand 조회
         MembershipBrand brand = membershipBrandRepository
                 .findById(userBrand.getMembershipBrandId())
                 .orElseThrow(() -> new GeneralException(GeneralErrorCode.BRAND4001));
@@ -48,7 +47,6 @@ public class UserMembershipBrandConverter {
                 .build();
     }
 
-    // Request → Entity
     public static UserMembershipBrand toUserMembershipBrand(
             Long userId,
             Long membershipBrandId,
@@ -58,19 +56,16 @@ public class UserMembershipBrandConverter {
                 .userId(userId)
                 .membershipBrandId(membershipBrandId)
                 .membershipNumber(request.getMembershipNumber())
-                .barcodeRawValue(request.getBarcodeRawValue())
                 .isMain(false)
                 .build();
     }
 
-    // Entity → Response DTO
     public static UserMembershipBrandResponseDTO.RegisterMembershipResultDTO toRegisterMembershipResultDTO(
             UserMembershipBrand userMembershipBrand
     ) {
         return UserMembershipBrandResponseDTO.RegisterMembershipResultDTO.builder()
                 .userMembershipBrandId(userMembershipBrand.getId())
                 .membershipNumber(userMembershipBrand.getMembershipNumber())
-                .barcodeRawValue(userMembershipBrand.getBarcodeRawValue())
                 .build();
     }
 }
