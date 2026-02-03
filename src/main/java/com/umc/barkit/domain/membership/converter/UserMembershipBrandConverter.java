@@ -82,7 +82,6 @@ public class UserMembershipBrandConverter {
 
         return UserMembershipBrandResponseDTO.UserMembershipBarcodeDTO.builder()
                 .membershipNumber(umb.getMembershipNumber())
-                .barcodeRawValue(umb.getBarcodeRawValue())
                 .logoUrl(brand.getLogoUrl())
                 .brandName(brand.getName())
                 .build();

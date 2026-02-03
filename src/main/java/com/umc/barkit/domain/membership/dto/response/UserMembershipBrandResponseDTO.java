@@ -42,7 +42,6 @@ public class UserMembershipBrandResponseDTO {
     @AllArgsConstructor
     public static class UserMembershipBarcodeDTO {
         private String membershipNumber;
-        private String barcodeRawValue;
         private String logoUrl;
         private String brandName;
     }
