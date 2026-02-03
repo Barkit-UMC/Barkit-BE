@@ -13,4 +13,6 @@ public interface MembershipBrandRepository extends JpaRepository<MembershipBrand
 
     Optional<MembershipBrand> findByName(String name);
 
+    boolean existsById(Long userId);
+
 }

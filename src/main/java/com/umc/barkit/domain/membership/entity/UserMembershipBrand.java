@@ -27,4 +27,5 @@ public class UserMembershipBrand extends BaseEntity {
 
     @Column(name = "is_main", nullable = false)
     private Boolean isMain = false;
+
 }

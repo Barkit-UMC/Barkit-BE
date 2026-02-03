@@ -1,8 +1,11 @@
 package com.umc.barkit.domain.membership.controller;
 
+
 import com.umc.barkit.domain.membership.dto.request.UserMembershipBrandRequestDTO;
 import com.umc.barkit.domain.membership.dto.response.UserMembershipBrandResponseDTO;
 import com.umc.barkit.domain.membership.service.UserMembershipBrandCommandService;
+import com.umc.barkit.domain.membership.dto.response.MembershipBrandResponseDTO;
+import com.umc.barkit.domain.membership.service.MembershipBrandQueryService;
 import com.umc.barkit.domain.membership.service.UserMembershipBrandQueryService;
 import com.umc.barkit.global.apiPayload.ApiResponse;
 import com.umc.barkit.global.apiPayload.code.GeneralErrorCode;
@@ -15,6 +18,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+
+
+
 
 @RestController
 @RequiredArgsConstructor
@@ -76,6 +82,24 @@ public class UserMembershipBrandController {
 
         UserMembershipBrandResponseDTO.RegisterMembershipResultDTO result =
                 userMembershipBrandCommandService.registerMembership(userId, membershipBrandId, request);
+
+        return ResponseEntity
+                .status(GeneralSuccessCode.OK.getStatus())
+                .body(ApiResponse.onSuccess(GeneralSuccessCode.OK, result));
+    }
+
+    @Operation(
+            summary = "멤버십 바코드 조회 기능 API",
+            description = "매장 상세 정보 페이지에서 멤버십 바코드를 조회할 수 있습니다."
+    )
+    @GetMapping("/{membershipBrandId}/barcode")
+    public ResponseEntity<ApiResponse<UserMembershipBrandResponseDTO.UserMembershipBarcodeDTO>> getUserMembershipBarcodeDTO(
+            @PathVariable("membershipBrandId") Long membershipBrandId,
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+
+        Long userId = userDetails.getUserId();
+
+        var result = userMembershipBrandQueryService.getUserMembershipBarcode(userId,membershipBrandId);
 
         return ResponseEntity
                 .status(GeneralSuccessCode.OK.getStatus())
