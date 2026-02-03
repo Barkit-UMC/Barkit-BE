@@ -21,7 +21,8 @@ public class UserResponseDto {
     @Builder
     public record LoginResponseDto(
             Long userId,
-            String accessToken
+            String accessToken,
+            String refreshToken
     ){}
 
     // 개인정보
