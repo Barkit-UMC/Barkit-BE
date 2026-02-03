@@ -5,7 +5,9 @@ import com.umc.barkit.domain.membership.dto.response.UserMembershipBrandResponse
 import com.umc.barkit.domain.membership.service.UserMembershipBrandCommandService;
 import com.umc.barkit.domain.membership.service.UserMembershipBrandQueryService;
 import com.umc.barkit.global.apiPayload.ApiResponse;
+import com.umc.barkit.global.apiPayload.code.GeneralErrorCode;
 import com.umc.barkit.global.apiPayload.code.GeneralSuccessCode;
+import com.umc.barkit.global.apiPayload.exception.GeneralException;
 import com.umc.barkit.global.auth.details.CustomUserDetails;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -40,6 +42,11 @@ public class UserMembershipBrandController {
             @Parameter(description = "한 번에 가져올 개수 (기본값: 20)", required = false, example = "20")
             @RequestParam(required = false) Integer limit
     ) {
+        // JWT 인증 체크
+        if (userDetails == null) {
+            throw new GeneralException(GeneralErrorCode.UNAUTHORIZED);
+        }
+
         Long userId = userDetails.getUserId();
 
         UserMembershipBrandResponseDTO.SearchResultDTO result =
@@ -57,12 +64,14 @@ public class UserMembershipBrandController {
     @PostMapping("/{membershipBrandId}")
     public ResponseEntity<ApiResponse<UserMembershipBrandResponseDTO.RegisterMembershipResultDTO>> registerMembership(
             @AuthenticationPrincipal CustomUserDetails userDetails,
-
-            @Parameter(description = "멤버십 브랜드 ID", required = true)
             @PathVariable Long membershipBrandId,
-
             @RequestBody UserMembershipBrandRequestDTO.RegisterMembershipDTO request
     ) {
+        // JWT 인증 체크
+        if (userDetails == null) {
+            throw new GeneralException(GeneralErrorCode.UNAUTHORIZED);
+        }
+
         Long userId = userDetails.getUserId();
 
         UserMembershipBrandResponseDTO.RegisterMembershipResultDTO result =
