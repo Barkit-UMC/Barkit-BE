@@ -17,4 +17,11 @@ public interface UserMembershipBrandRepository
 
     // 단건 조회 (기본 JPA 기능이지만 명시적으로 쓰는 경우)
     Optional<UserMembershipBrand> findById(Long id);
+
+
+    // 추가: 특정 브랜드의 사용자 멤버십 조회
+    Optional<UserMembershipBrand> findByUserIdAndMembershipBrandId(
+            Long userId,
+            Long membershipBrandId
+    );
 }

@@ -8,6 +8,9 @@ import com.umc.barkit.domain.membership.repository.UserMembershipBrandRepository
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.umc.barkit.global.auth.details.CustomUserDetails;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -35,8 +38,14 @@ public class HomeDashboardServiceImpl implements HomeDashboardService {
                         .stream()
                         .sorted(
                                 Comparator
-                                        .comparing(UserMembershipBrand::getIsMain).reversed()
-                                        .thenComparing(UserMembershipBrand::getCreatedAt)
+                                        .comparing(
+                                                UserMembershipBrand::getIsMain,
+                                                Comparator.nullsLast(Boolean::compareTo)
+                                        ).reversed()
+                                        .thenComparing(
+                                                UserMembershipBrand::getCreatedAt,
+                                                Comparator.nullsLast(Comparator.naturalOrder())
+                                        )
                         )
                         .toList();
 
@@ -78,7 +87,12 @@ public class HomeDashboardServiceImpl implements HomeDashboardService {
     }
 
     private Long getCurrentUserId() {
-        // TODO: SecurityContext 연동
-        return 100L;
+        Authentication authentication =
+                SecurityContextHolder.getContext().getAuthentication();
+
+        CustomUserDetails userDetails =
+                (CustomUserDetails) authentication.getPrincipal();
+
+        return userDetails.getUserId();
     }
 }
