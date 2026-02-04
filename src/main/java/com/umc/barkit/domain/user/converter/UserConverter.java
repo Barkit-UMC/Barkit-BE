@@ -50,11 +50,13 @@ public class UserConverter {
     // User -> LoginResponseDto
     public static UserResponseDto.LoginResponseDto toLoginDTO(
             User user,
-            String accessToken
+            String accessToken,
+            String refreshToken
     ){
         return UserResponseDto.LoginResponseDto.builder()
                 .userId(user.getId())
                 .accessToken(accessToken)
+                .refreshToken(refreshToken)
                 .build();
     }
 

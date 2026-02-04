@@ -7,11 +7,14 @@ import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Date;
 import java.util.stream.Collectors;
 import javax.crypto.SecretKey;
+import lombok.Getter;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.stereotype.Component;
@@ -21,17 +24,27 @@ public class JwtUtil {
     private final SecretKey secretKey;
     private final Duration accessExpiration;
 
+    @Getter
+    private final Duration refreshExpiration;
+
     public JwtUtil(
             @Value("${jwt.token.secretKey}") String secret,
-            @Value("${jwt.token.expiration.access}") Long accessExpiration
+            @Value("${jwt.token.expiration.access}") Long accessExpiration,
+            @Value("${jwt.token.expiration.refresh}") Long refreshExpiration
     ) {
         this.secretKey = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
         this.accessExpiration = Duration.ofMillis(accessExpiration);
+        this.refreshExpiration = Duration.ofMillis(refreshExpiration);
     }
 
     // AccessToken 생성
     public String createAccessToken(CustomUserDetails user) {
         return createToken(user, accessExpiration);
+    }
+
+    // RefreshToken 생성
+    public String createRefreshToken(CustomUserDetails user) {
+        return createToken(user, refreshExpiration);
     }
 
     /** 토큰에서 이메일 가져오기
@@ -88,5 +101,25 @@ public class JwtUtil {
                 .build()
                 .parseSignedClaims(token);
     }
+
+    // 리프레쉬 토큰 해시화
+    public String hashToken(String token) {
+        try {
+            MessageDigest md = MessageDigest.getInstance("SHA-256");
+            byte[] digest = md.digest(token.getBytes(StandardCharsets.UTF_8));
+            return bytesToHex(digest);
+        } catch (NoSuchAlgorithmException e) {
+            throw new IllegalStateException("SHA-256 not supported", e);
+        }
+    }
+
+    private String bytesToHex(byte[] bytes) {
+        StringBuilder sb = new StringBuilder(bytes.length * 2);
+        for (byte b : bytes) {
+            sb.append(String.format("%02x", b));
+        }
+        return sb.toString();
+    }
+
 }
 
