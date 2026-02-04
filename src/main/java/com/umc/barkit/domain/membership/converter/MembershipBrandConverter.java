@@ -25,11 +25,11 @@ public class MembershipBrandConverter {
                 .collect(Collectors.toList());
     }
 
-    // MembershipBrand Entity List -> Top4BrandsDTO 변환
-    public static MembershipBrandResponseDTO.Top4BrandsDTO toTop4BrandsDTO(List<MembershipBrand> membershipBrands) {
+    // MembershipBrand Entity List -> DefaultBrandsDTO 변환
+    public static MembershipBrandResponseDTO.DefaultBrandsDTO toDefaultBrandsDTO(List<MembershipBrand> membershipBrands) {
         List<MembershipBrandResponseDTO.BrandSimpleDTO> brandDTOs = toBrandSimpleDTOList(membershipBrands);
 
-        return MembershipBrandResponseDTO.Top4BrandsDTO.builder()
+        return MembershipBrandResponseDTO.DefaultBrandsDTO.builder()
                 .brands(brandDTOs)
                 .build();
     }
