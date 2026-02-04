@@ -25,12 +25,17 @@ public class UserResponseDto {
             String refreshToken
     ){}
 
+
+    // 엑세스 토큰 응답
+    public record RefreshResponseDto(
+            String accessToken
+    ){}
+
     // 개인정보
     public record PersonalInfoResponseDto(
             String name,
             String email,
             String phoneNumber,
             LocalDate birthDate
-    ) {
-    }
+    ) {}
 }

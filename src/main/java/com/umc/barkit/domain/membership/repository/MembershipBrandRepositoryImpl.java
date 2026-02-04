@@ -31,7 +31,7 @@ public class MembershipBrandRepositoryImpl implements MembershipBrandRepositoryC
     }};
 
     @Override
-    public List<MembershipBrand> findTop4ByRegistrationCount() {
+    public List<MembershipBrand> findTop10ByRegistrationCountForDefault() {
         return queryFactory
                 .selectFrom(membershipBrand)
                 .leftJoin(userMembershipBrand)
@@ -41,7 +41,7 @@ public class MembershipBrandRepositoryImpl implements MembershipBrandRepositoryC
                         userMembershipBrand.count().desc(),
                         membershipBrand.id.asc()
                 )
-                .limit(4)
+                .limit(10)
                 .fetch();
     }
 

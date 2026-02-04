@@ -9,12 +9,12 @@ import java.util.List;
 
 public class MembershipBrandResponseDTO {
 
-    // 상위 4개 멤버십 브랜드 조회 응답 DTO
+    // 기본 10개 멤버십 브랜드 조회 응답 DTO
     @Getter
     @Builder
     @NoArgsConstructor
     @AllArgsConstructor
-    public static class Top4BrandsDTO {
+    public static class DefaultBrandsDTO {
         private List<BrandSimpleDTO> brands;
     }
 
