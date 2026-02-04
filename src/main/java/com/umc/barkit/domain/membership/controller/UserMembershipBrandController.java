@@ -3,6 +3,7 @@ package com.umc.barkit.domain.membership.controller;
 
 import com.umc.barkit.domain.membership.dto.request.UserMembershipBrandRequestDTO;
 import com.umc.barkit.domain.membership.dto.response.UserMembershipBrandResponseDTO;
+import com.umc.barkit.domain.membership.exception.code.MembershipSuccessCode;
 import com.umc.barkit.domain.membership.service.UserMembershipBrandCommandService;
 import com.umc.barkit.domain.membership.dto.response.MembershipBrandResponseDTO;
 import com.umc.barkit.domain.membership.service.MembershipBrandQueryService;
@@ -104,5 +105,31 @@ public class UserMembershipBrandController {
         return ResponseEntity
                 .status(GeneralSuccessCode.OK.getStatus())
                 .body(ApiResponse.onSuccess(GeneralSuccessCode.OK, result));
+    }
+
+    @Operation(
+            summary = "대표 멤버십 설정/해제",
+            description = "사용자가 등록한 멤버십을 대표 멤버십으로 설정하거나 해제합니다."
+    )
+    @PatchMapping("/{userMembershipBrandId}/main")
+    public ResponseEntity<ApiResponse<Void>> updateMainMembership(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @PathVariable Long userMembershipBrandId
+    ) {
+        Long userId = userDetails.getUserId();
+
+        //  토글 결과 받기
+        boolean isNowMain =
+                userMembershipBrandCommandService.updateMainMembership(userId, userMembershipBrandId);
+
+        //  상태에 따른 SuccessCode 분기
+        MembershipSuccessCode successCode =
+                isNowMain
+                        ? MembershipSuccessCode.MEMBERSHIP2007
+                        : MembershipSuccessCode.MEMBERSHIP2008;
+
+        return ResponseEntity
+                .status(successCode.getStatus())
+                .body(ApiResponse.onSuccess(successCode, null));
     }
 }

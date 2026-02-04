@@ -83,4 +83,19 @@ public class UserMembershipBrandRepositoryImpl implements UserMembershipBrandRep
 
         return count != null && count > 0;
     }
+
+    // 대표 멤버십 개수 조회
+    @Override
+    public int countMainByUserId(Long userId) {
+        Long count = queryFactory
+                .select(userMembershipBrand.count())
+                .from(userMembershipBrand)
+                .where(
+                        userMembershipBrand.userId.eq(userId),
+                        userMembershipBrand.isMain.isTrue()
+                )
+                .fetchOne();
+
+        return count == null ? 0 : count.intValue();
+    }
 }

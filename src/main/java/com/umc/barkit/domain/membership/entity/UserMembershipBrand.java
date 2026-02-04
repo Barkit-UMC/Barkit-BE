@@ -28,4 +28,8 @@ public class UserMembershipBrand extends BaseEntity {
     @Column(name = "is_main", nullable = false)
     private Boolean isMain = false;
 
+    // 도메인 로직 메서드
+    public void updateIsMain(boolean isMain) {
+        this.isMain = isMain;
+    }
 }
