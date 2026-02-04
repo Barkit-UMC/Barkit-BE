@@ -8,6 +8,7 @@ import com.umc.barkit.domain.membership.entity.UserMembershipBrand;
 import com.umc.barkit.domain.membership.exception.MembershipException;
 import com.umc.barkit.domain.membership.exception.code.MembershipErrorCode;
 import com.umc.barkit.domain.membership.repository.MembershipBrandRepository;
+import com.umc.barkit.domain.store.dto.google.GooglePlaceDTO;
 import com.umc.barkit.domain.store.entity.StoreBrand;
 import com.umc.barkit.domain.store.entity.Store;
 import com.umc.barkit.global.apiPayload.code.GeneralErrorCode;
@@ -89,20 +90,30 @@ public class UserMembershipBrandConverter {
     }
 
     /* =========================
-       사용 가능 매장 조회
+       사용 가능 매장 조회 (Google Place 반영)
      ========================= */
 
     public UserMembershipBrandResponseDTO.AvailableStoreDTO
-    toAvailableStoreDTO(Store store) {
-
+    toAvailableStoreDTO(
+            Store store,
+            GooglePlaceDTO.Place place
+    ) {
         StoreBrand brand = store.getBrand();
 
         return UserMembershipBrandResponseDTO.AvailableStoreDTO.builder()
                 .storeId(store.getId())
-                .storeName(brand.getName())
+                .storeName(
+                        place != null
+                                ? place.displayName().text()
+                                : brand.getName()
+                )
                 .brandName(brand.getName())
                 .logoUrl(brand.getLogoUrl())
-                .address(null) // TODO: Google Place 연동 시 주소 추가
+                .address(
+                        place != null
+                                ? place.formattedAddress()
+                                : null
+                )
                 .build();
     }
 }
