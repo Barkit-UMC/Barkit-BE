@@ -22,4 +22,18 @@ public interface StoreRepository extends JpaRepository<Store,Long> {
             "where s.googleId in :googleIds"
         )
     List<ViewCountProjection> findViewCountsByGoogleIds(@Param("googleIds") Collection<String> googleIds);
+
+    //  멤버십 기준 매장 조회 (검색 optional)
+    @Query("""
+        select distinct s
+        from Store s
+        join s.brand sb
+        where sb.id in :storeBrandIds
+          and (:keyword is null
+               or lower(sb.name) like lower(concat('%', :keyword, '%')))
+    """)
+    List<Store> findStoresByStoreBrandIdsAndKeyword(
+            @Param("storeBrandIds") List<Long> storeBrandIds,
+            @Param("keyword") String keyword
+    );
 }

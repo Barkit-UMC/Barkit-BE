@@ -8,12 +8,13 @@ import com.umc.barkit.domain.membership.entity.UserMembershipBrand;
 import com.umc.barkit.domain.membership.exception.MembershipException;
 import com.umc.barkit.domain.membership.exception.code.MembershipErrorCode;
 import com.umc.barkit.domain.membership.repository.MembershipBrandRepository;
+import com.umc.barkit.domain.store.entity.StoreBrand;
+import com.umc.barkit.domain.store.entity.Store;
 import com.umc.barkit.global.apiPayload.code.GeneralErrorCode;
 import com.umc.barkit.global.apiPayload.exception.GeneralException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import com.umc.barkit.domain.membership.dto.response.MembershipBrandResponseDTO;
-import com.umc.barkit.domain.membership.entity.UserMembershipBrand;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -84,6 +85,24 @@ public class UserMembershipBrandConverter {
                 .membershipNumber(umb.getMembershipNumber())
                 .logoUrl(brand.getLogoUrl())
                 .brandName(brand.getName())
+                .build();
+    }
+
+    /* =========================
+       사용 가능 매장 조회
+     ========================= */
+
+    public UserMembershipBrandResponseDTO.AvailableStoreDTO
+    toAvailableStoreDTO(Store store) {
+
+        StoreBrand brand = store.getBrand();
+
+        return UserMembershipBrandResponseDTO.AvailableStoreDTO.builder()
+                .storeId(store.getId())
+                .storeName(brand.getName())
+                .brandName(brand.getName())
+                .logoUrl(brand.getLogoUrl())
+                .address(null) // TODO: Google Place 연동 시 주소 추가
                 .build();
     }
 }

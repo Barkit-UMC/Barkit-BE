@@ -132,4 +132,34 @@ public class UserMembershipBrandController {
                 .status(successCode.getStatus())
                 .body(ApiResponse.onSuccess(successCode, null));
     }
+
+    @Operation(
+            summary = "멤버십 기준 적립/할인 가능 매장 조회",
+            description = "로그인한 사용자가 보유한 특정 멤버십으로 적립/할인 가능한 매장 목록을 조회합니다. " +
+                    "검색어(keyword)를 통해 매장명 검색이 가능합니다."
+    )
+    @GetMapping("/{userMembershipBrandId}/stores")
+    public ResponseEntity<ApiResponse<UserMembershipBrandResponseDTO.AvailableStoreListDTO>> getAvailableStores(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @PathVariable Long userMembershipBrandId,
+            @RequestParam(required = false) String keyword
+    ) {
+        if (userDetails == null) {
+            throw new GeneralException(GeneralErrorCode.UNAUTHORIZED);
+        }
+
+        Long userId = userDetails.getUserId();
+
+        UserMembershipBrandResponseDTO.AvailableStoreListDTO result =
+                userMembershipBrandQueryService.getAvailableStores(
+                        userId,
+                        userMembershipBrandId,
+                        keyword
+                );
+
+        return ResponseEntity
+                .status(GeneralSuccessCode.OK.getStatus())
+                .body(ApiResponse.onSuccess(GeneralSuccessCode.OK, result));
+    }
+
 }
