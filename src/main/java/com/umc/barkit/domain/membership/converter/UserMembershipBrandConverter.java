@@ -90,30 +90,19 @@ public class UserMembershipBrandConverter {
     }
 
     /* =========================
-       사용 가능 매장 조회 (Google Place 반영)
+       사용 가능 매장 조회
      ========================= */
-
     public UserMembershipBrandResponseDTO.AvailableStoreDTO
-    toAvailableStoreDTO(
-            Store store,
-            GooglePlaceDTO.Place place
-    ) {
+    toAvailableStoreDTO(Store store) {
+
         StoreBrand brand = store.getBrand();
 
         return UserMembershipBrandResponseDTO.AvailableStoreDTO.builder()
                 .storeId(store.getId())
-                .storeName(
-                        place != null
-                                ? place.displayName().text()
-                                : brand.getName()
-                )
+                .storeName(brand.getName())   // 아직 지점명 없음
                 .brandName(brand.getName())
                 .logoUrl(brand.getLogoUrl())
-                .address(
-                        place != null
-                                ? place.formattedAddress()
-                                : null
-                )
+                .address(null)                // 1단계: null
                 .build();
     }
 }

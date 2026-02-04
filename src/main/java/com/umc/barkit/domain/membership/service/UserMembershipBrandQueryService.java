@@ -17,7 +17,9 @@ public interface UserMembershipBrandQueryService {
     UserMembershipBrandResponseDTO.AvailableStoreListDTO getAvailableStores(
             Long userId,
             Long userMembershipBrandId,
-            String keyword
+            String keyword,
+            Long cursor,
+            Integer size
     );
 
 }

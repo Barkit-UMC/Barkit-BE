@@ -25,15 +25,20 @@ public interface StoreRepository extends JpaRepository<Store,Long> {
 
     //  멤버십 기준 매장 조회 (검색 optional)
     @Query("""
-        select distinct s
-        from Store s
-        join s.brand sb
-        where sb.id in :storeBrandIds
-          and (:keyword is null
-               or lower(sb.name) like lower(concat('%', :keyword, '%')))
+    select distinct s
+    from Store s
+    join s.brand sb
+    where sb.id in :storeBrandIds
+      and (:keyword is null
+           or lower(sb.name) like lower(concat('%', :keyword, '%')))
+      and (:cursor is null or s.id > :cursor)
+    order by s.id asc
     """)
     List<Store> findStoresByStoreBrandIdsAndKeyword(
             @Param("storeBrandIds") List<Long> storeBrandIds,
-            @Param("keyword") String keyword
+            @Param("keyword") String keyword,
+            @Param("cursor") Long cursor,
+            org.springframework.data.domain.Pageable pageable
     );
+
 }

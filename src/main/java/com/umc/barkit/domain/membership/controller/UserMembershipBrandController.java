@@ -136,13 +136,15 @@ public class UserMembershipBrandController {
     @Operation(
             summary = "멤버십 기준 적립/할인 가능 매장 조회",
             description = "로그인한 사용자가 보유한 특정 멤버십으로 적립/할인 가능한 매장 목록을 조회합니다. " +
-                    "검색어(keyword)를 통해 매장명 검색이 가능합니다."
+                    "검색어(keyword)를 통해 매장명 검색이 가능하며, cursor 기반 페이징을 지원합니다."
     )
     @GetMapping("/{userMembershipBrandId}/stores")
     public ResponseEntity<ApiResponse<UserMembershipBrandResponseDTO.AvailableStoreListDTO>> getAvailableStores(
             @AuthenticationPrincipal CustomUserDetails userDetails,
             @PathVariable Long userMembershipBrandId,
-            @RequestParam(required = false) String keyword
+            @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) Long cursor,
+            @RequestParam(required = false) Integer size
     ) {
         if (userDetails == null) {
             throw new GeneralException(GeneralErrorCode.UNAUTHORIZED);
@@ -154,12 +156,13 @@ public class UserMembershipBrandController {
                 userMembershipBrandQueryService.getAvailableStores(
                         userId,
                         userMembershipBrandId,
-                        keyword
+                        keyword,
+                        cursor,
+                        size
                 );
 
         return ResponseEntity
                 .status(GeneralSuccessCode.OK.getStatus())
                 .body(ApiResponse.onSuccess(GeneralSuccessCode.OK, result));
     }
-
 }

@@ -20,6 +20,8 @@ import com.umc.barkit.domain.store.external.google.GoogleMapSearchClient;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -99,22 +101,34 @@ public class UserMembershipBrandQueryServiceImpl implements UserMembershipBrandQ
 
     @Override
     public UserMembershipBrandResponseDTO.AvailableStoreListDTO
-    getAvailableStores(Long userId, Long userMembershipBrandId, String keyword) {
+    getAvailableStores(
+            Long userId,
+            Long userMembershipBrandId,
+            String keyword,
+            Long cursor,
+            Integer size
+    ) {
+        // 0. pageSize 보정 로직 (여기!)
+        int pageSize = (size == null || size <= 0) ? 20 : size;
+
+        Pageable pageable = PageRequest.of(0, pageSize);
 
         // 1. 사용자 멤버십 검증
         UserMembershipBrand umb =
                 userMembershipBrandRepository.findById(userMembershipBrandId)
                         .orElseThrow(() ->
-                                new MembershipException(MembershipErrorCode.MEMBERSHIP4001));
+                                new MembershipException(
+                                        MembershipErrorCode.MEMBERSHIP4001));
 
         if (!umb.getUserId().equals(userId)) {
-            throw new MembershipException(MembershipErrorCode.MEMBERSHIP4003);
+            throw new MembershipException(
+                    MembershipErrorCode.MEMBERSHIP4003);
         }
 
         // 2. 멤버십 브랜드 ID
         Long membershipBrandId = umb.getMembershipBrandId();
 
-        // 3. 멤버십 → StoreBrand ID 목록
+        // 3. 멤버십 → StoreBrand IDs
         List<Long> storeBrandIds =
                 storeBrandMembershipBrandRepository
                         .findStoreBrandIdsByMembershipBrandId(membershipBrandId);
@@ -125,23 +139,19 @@ public class UserMembershipBrandQueryServiceImpl implements UserMembershipBrandQ
                     .build();
         }
 
-        // 4. Store 조회
+        // 4. Store 조회 (cursor + size + keyword)
         List<Store> stores =
                 storeRepository.findStoresByStoreBrandIdsAndKeyword(
-                        storeBrandIds, keyword
+                        storeBrandIds,
+                        keyword,
+                        cursor,
+                        pageable
                 );
 
-        // 5. Google Place 연동 + DTO 변환 (🔥 핵심)
+        // 5. DTO 변환
         List<UserMembershipBrandResponseDTO.AvailableStoreDTO> storeDTOs =
                 stores.stream()
-                        .map(store -> {
-                            var place =
-                                    googleMapSearchClient
-                                            .getPlaceDetail(store.getGoogleId());
-
-                            return userMembershipBrandConverter
-                                    .toAvailableStoreDTO(store, place);
-                        })
+                        .map(store -> userMembershipBrandConverter.toAvailableStoreDTO(store))
                         .toList();
 
         return UserMembershipBrandResponseDTO.AvailableStoreListDTO.builder()
