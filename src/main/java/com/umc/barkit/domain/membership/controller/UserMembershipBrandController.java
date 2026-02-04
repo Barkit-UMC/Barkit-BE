@@ -3,16 +3,18 @@ package com.umc.barkit.domain.membership.controller;
 
 import com.umc.barkit.domain.membership.dto.request.UserMembershipBrandRequestDTO;
 import com.umc.barkit.domain.membership.dto.response.UserMembershipBrandResponseDTO;
+import com.umc.barkit.domain.membership.exception.code.MembershipSuccessCode;
 import com.umc.barkit.domain.membership.service.UserMembershipBrandCommandService;
 import com.umc.barkit.domain.membership.dto.response.MembershipBrandResponseDTO;
 import com.umc.barkit.domain.membership.service.MembershipBrandQueryService;
 import com.umc.barkit.domain.membership.service.UserMembershipBrandQueryService;
 import com.umc.barkit.global.apiPayload.ApiResponse;
+import com.umc.barkit.global.apiPayload.code.GeneralErrorCode;
 import com.umc.barkit.global.apiPayload.code.GeneralSuccessCode;
+import com.umc.barkit.global.apiPayload.exception.GeneralException;
 import com.umc.barkit.global.auth.details.CustomUserDetails;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
-import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -27,7 +29,7 @@ import org.springframework.web.bind.annotation.*;
 public class UserMembershipBrandController {
 
     private final UserMembershipBrandQueryService userMembershipBrandQueryService;
-    private final UserMembershipBrandCommandService userMembershipBrandCommandService;  // 변경
+    private final UserMembershipBrandCommandService userMembershipBrandCommandService;
 
     @Operation(
             summary = "사용자 보유 멤버십 브랜드 검색",
@@ -36,8 +38,7 @@ public class UserMembershipBrandController {
     )
     @GetMapping("/search")
     public ResponseEntity<ApiResponse<UserMembershipBrandResponseDTO.SearchResultDTO>> searchUserMembershipBrands(
-            @Parameter(description = "사용자 ID", required = true, example = "100")
-            @RequestParam Long userId,  // TODO: 추후 JWT에서 추출
+            @AuthenticationPrincipal CustomUserDetails userDetails,
 
             @Parameter(description = "검색 키워드", required = true)
             @RequestParam String keyword,
@@ -48,6 +49,13 @@ public class UserMembershipBrandController {
             @Parameter(description = "한 번에 가져올 개수 (기본값: 20)", required = false, example = "20")
             @RequestParam(required = false) Integer limit
     ) {
+        // JWT 인증 체크
+        if (userDetails == null) {
+            throw new GeneralException(GeneralErrorCode.UNAUTHORIZED);
+        }
+
+        Long userId = userDetails.getUserId();
+
         UserMembershipBrandResponseDTO.SearchResultDTO result =
                 userMembershipBrandQueryService.searchUserMembershipBrands(userId, keyword, cursor, limit);
 
@@ -57,21 +65,22 @@ public class UserMembershipBrandController {
     }
 
     @Operation(
-            summary = "멤버십 번호 등록",
-            description = "사용자가 멤버십 번호를 직접 입력하여 등록합니다. " +
-                    "프론트에서 멤버십 번호로 바코드 문자열을 추출하여 같이 전달합니다. " +
-                    "추후 userId가 아닌 JWT에서 추출하도록 변경 예정"
+            summary = "멤버십 등록",
+            description = "사용자가 멤버십 번호를 직접 입력하거나 바코드 이미지를 통해 등록합니다."
     )
-    @PostMapping("/{membershipBrandId}/number")
+    @PostMapping("/{membershipBrandId}")
     public ResponseEntity<ApiResponse<UserMembershipBrandResponseDTO.RegisterMembershipResultDTO>> registerMembership(
-            @Parameter(description = "사용자 ID", required = true, example = "100")
-            @RequestParam Long userId,  // TODO: 추후 JWT에서 추출
-
-            @Parameter(description = "멤버십 브랜드 ID", required = true, example = "1")
+            @AuthenticationPrincipal CustomUserDetails userDetails,
             @PathVariable Long membershipBrandId,
-
             @RequestBody UserMembershipBrandRequestDTO.RegisterMembershipDTO request
     ) {
+        // JWT 인증 체크
+        if (userDetails == null) {
+            throw new GeneralException(GeneralErrorCode.UNAUTHORIZED);
+        }
+
+        Long userId = userDetails.getUserId();
+
         UserMembershipBrandResponseDTO.RegisterMembershipResultDTO result =
                 userMembershipBrandCommandService.registerMembership(userId, membershipBrandId, request);
 
@@ -96,5 +105,31 @@ public class UserMembershipBrandController {
         return ResponseEntity
                 .status(GeneralSuccessCode.OK.getStatus())
                 .body(ApiResponse.onSuccess(GeneralSuccessCode.OK, result));
+    }
+
+    @Operation(
+            summary = "대표 멤버십 설정/해제",
+            description = "사용자가 등록한 멤버십을 대표 멤버십으로 설정하거나 해제합니다."
+    )
+    @PatchMapping("/{userMembershipBrandId}/main")
+    public ResponseEntity<ApiResponse<Void>> updateMainMembership(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @PathVariable Long userMembershipBrandId
+    ) {
+        Long userId = userDetails.getUserId();
+
+        //  토글 결과 받기
+        boolean isNowMain =
+                userMembershipBrandCommandService.updateMainMembership(userId, userMembershipBrandId);
+
+        //  상태에 따른 SuccessCode 분기
+        MembershipSuccessCode successCode =
+                isNowMain
+                        ? MembershipSuccessCode.MEMBERSHIP2007
+                        : MembershipSuccessCode.MEMBERSHIP2008;
+
+        return ResponseEntity
+                .status(successCode.getStatus())
+                .body(ApiResponse.onSuccess(successCode, null));
     }
 }

@@ -13,18 +13,6 @@ import java.util.Map;
 public class WebClientConfig {
 
     @Bean
-    public WebClient kakaoWebClient(
-            @Value("${kakao.api.base-url}") String baseUrl,
-            @Value("${kakao.api.rest-key}") String restKey
-    ) {
-        return WebClient.builder()
-                .baseUrl(baseUrl)
-                .defaultHeader(HttpHeaders.AUTHORIZATION, "KakaoAK " + restKey)
-                .defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
-                .build();
-    }
-
-    @Bean
     public WebClient googleWebClient(
             @Value("${google.api.base-url}") String baseUrl
     ) {

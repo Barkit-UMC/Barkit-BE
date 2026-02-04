@@ -4,6 +4,7 @@ import com.umc.barkit.domain.membership.converter.UserMembershipBrandConverter;
 import com.umc.barkit.domain.membership.dto.request.UserMembershipBrandRequestDTO;
 import com.umc.barkit.domain.membership.dto.response.UserMembershipBrandResponseDTO;
 import com.umc.barkit.domain.membership.entity.UserMembershipBrand;
+import com.umc.barkit.domain.membership.exception.code.MembershipErrorCode;
 import com.umc.barkit.domain.membership.repository.MembershipBrandRepository;
 import com.umc.barkit.domain.membership.repository.UserMembershipBrandRepository;
 import com.umc.barkit.global.apiPayload.code.GeneralErrorCode;
@@ -71,5 +72,57 @@ public class UserMembershipBrandCommandServiceImpl implements UserMembershipBran
         if (membershipNumber.length() > 20) {
             throw new GeneralException(GeneralErrorCode.MEMBERSHIP4002);
         }
+    }
+
+    /**
+     * 대표 멤버십 설정 / 해제
+     *
+     * - 유저가 보유한 멤버십인지 검증
+     * - 현재 isMain 상태에 따라 ON / OFF 토글
+     * - 대표 멤버십은 최대 3개까지 허용
+     *
+     * @param userId 로그인한 사용자 ID
+     * @param userMembershipBrandId 유저 멤버십 ID
+     */
+    @Override
+    @Transactional
+    public boolean updateMainMembership(Long userId, Long userMembershipBrandId) {
+
+        // 1. 유저 멤버십 조회 + 존재 여부 검증
+        UserMembershipBrand userMembershipBrand = userMembershipBrandRepository
+                .findById(userMembershipBrandId)
+                .orElseThrow(() ->
+                        new GeneralException(MembershipErrorCode.MEMBERSHIP4004)
+                );
+        // "등록된 사용자 멤버십이 존재하지 않습니다."
+
+        // 2. 소유권 검증
+        if (!userMembershipBrand.getUserId().equals(userId)) {
+            throw new GeneralException(MembershipErrorCode.MEMBERSHIP4006);
+            // "본인의 멤버십만 대표 멤버십으로 설정할 수 있습니다."
+        }
+
+        // 3. 현재 대표 멤버십 여부
+        boolean isCurrentlyMain = Boolean.TRUE.equals(userMembershipBrand.getIsMain());
+
+        // 4. 대표 멤버십 ON 시 → 개수 제한 체크
+        if (!isCurrentlyMain) {
+            int mainCount = userMembershipBrandRepository.countMainByUserId(userId);
+
+            if (mainCount >= 3) {
+                throw new GeneralException(MembershipErrorCode.MEMBERSHIP4007);
+                // "대표 멤버십은 최대 3개까지 설정할 수 있습니다."
+            }
+        }
+
+        // 5. 토글 처리
+        boolean isNowMain = !isCurrentlyMain;
+        userMembershipBrand.updateIsMain(isNowMain);
+
+        // 6. 저장 (dirty checking으로 사실상 생략 가능)
+        userMembershipBrandRepository.save(userMembershipBrand);
+
+        // 7. 토글 결과 반환
+        return isNowMain;
     }
 }

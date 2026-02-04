@@ -1,6 +1,7 @@
 package com.umc.barkit.domain.store.service.query;
 
 import com.umc.barkit.domain.membership.entity.MembershipBrand;
+import com.umc.barkit.domain.membership.repository.MembershipBrandAliasRepository;
 import com.umc.barkit.domain.membership.repository.MembershipBrandRepository;
 import com.umc.barkit.domain.store.dto.google.GooglePlaceDTO;
 import com.umc.barkit.domain.store.dto.req.StoreReqDTO;
@@ -15,6 +16,7 @@ import com.umc.barkit.domain.store.exception.StoreException;
 import com.umc.barkit.domain.store.exception.code.StoreErrorCode;
 import com.umc.barkit.domain.store.external.google.GoogleMapSearchClient;
 import com.umc.barkit.domain.store.external.google.dto.GoogleResDTO;
+import com.umc.barkit.domain.store.repository.StoreBrandAliasRepository;
 import com.umc.barkit.domain.store.repository.StoreBrandMembershipBrandRepository;
 import com.umc.barkit.domain.store.repository.StoreBrandRepository;
 import com.umc.barkit.domain.store.repository.StoreRepository;
@@ -31,7 +33,6 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
@@ -47,13 +48,11 @@ public class StoreQueryServiceImpl implements StoreQueryService{
     private final StoreBrandMembershipBrandRepository storeBrandMembershipBrandRepository;
     private final StoreRepository storeRepository;
     private final StoreBrandRepository storeBrandRepository;
+    private final StoreBrandAliasRepository storeBrandAliasRepository;
+    private final MembershipBrandAliasRepository membershipBrandAliasRepository;
 
     private final GoogleMapSearchClient googleClient;
     private final StoreCommandService storeCommandService;
-
-    private final StoreUtil storeUtil;
-
-    private static final double MAX_DISTANCE_KM = 5.0;
 
     @Qualifier("googleSearchExecutor")
     private final Executor googleSearchExecutor;
@@ -73,11 +72,13 @@ public class StoreQueryServiceImpl implements StoreQueryService{
 
         List<StoreResDTO.SearchedStore> fullResult;
 
-        // 입력값이 멤버십명인지 매장명인지 구별
-        if (isMembershipBrand(req.query())) {
-            // 멤버십명으로 검색 로직 실행
+        // 우선 검색어가 멤버십이라 가정하고 멤버십명으로 쿼리 정규화
+        Optional<MembershipBrand> membershipOpt = resolveMembership(req.query());
+
+        // 멤버십명으로 검색
+        if (membershipOpt.isPresent()) {
             fullResult = searchByMembership(
-                    req.query(),
+                    membershipOpt.get(),
                     distanceType,
                     category,
                     req.userLat(),
@@ -85,20 +86,26 @@ public class StoreQueryServiceImpl implements StoreQueryService{
                     req.centerLat(),
                     req.centerLng()
             );
-        } else if (isStoreBrand(req.query())) {
-            // 매장명으로 검색 로직 실행
-            fullResult = searchByBrand(
-                    req.query(),
-                    distanceType,
-                    category,
-                    req.userLat(),
-                    req.userLng(),
-                    req.centerLat(),
-                    req.centerLng()
-            );
-        } else {
-            //검색 결과 없으면(멤버십도 매장명도 아니면) 빈리스트 반환
-            fullResult = List.of();
+        }
+        // 매장명으로 검색
+        else {
+            Optional<StoreBrand> brandOpt = resolveStoreBrand(req.query());
+            if (brandOpt.isPresent()) {
+                fullResult = searchByBrand(
+                        brandOpt.get(),
+                        req.query(),
+                        distanceType,
+                        category,
+                        req.userLat(),
+                        req.userLng(),
+                        req.centerLat(),
+                        req.centerLng()
+                );
+            }
+            // 멤버십도 매장도 아니면 빈리스트 반환
+            else {
+                fullResult = List.of();
+            }
         }
 
         //중복 제거
@@ -147,7 +154,7 @@ public class StoreQueryServiceImpl implements StoreQueryService{
                 .lng(storeLng)
                 .build();
 
-        double distance = storeUtil.round2(storeUtil.distanceKm(userLat, userLng, storeLat, storeLng));
+        double distance = StoreUtil.round2(StoreUtil.distanceKm(userLat, userLng, storeLat, storeLng));
 
         // 영업시간 정보
         boolean isOpen = g.currentOpeningHours() != null && g.currentOpeningHours().openNow();
@@ -258,36 +265,19 @@ public class StoreQueryServiceImpl implements StoreQueryService{
         }
     }
 
-    //멤버십명인지 검증
-    private Boolean isMembershipBrand(String query) {
-        return membershipBrandRepository.existsByName(query);
-    }
-
-    //매장명인지 검증
-    private Boolean isStoreBrand(String query) {
-        return storeBrandRepository.existsByNameContainedInQuery(query);
-    }
-
     //매장명 검색 로직
     /*
     올리브영만 검색 -> 근처 검색
     올리브영 성수점 검색 -> 근처 검색 실행 -> 결과 없음 -> 전체 검색
      */
     private List<StoreResDTO.SearchedStore> searchByBrand(
-            String query,
+            StoreBrand matchedBrand,
+            String originalQuery,
             DistanceType distanceType,
             Category category,
-            Double userLat,
-            Double userLng,
-            Double centerLat,
-            Double centerLng) {
+            Double userLat, Double userLng,
+            Double centerLat, Double centerLng) {
 
-        StoreBrand matchedBrand = storeBrandRepository.findMatchedBrand(query).get();
-
-        // 매칭되는 브랜드 없으면 빈 리스트 반환
-        if (matchedBrand == null) {
-            return List.of();
-        }
 
         // 카테고리 체크
         if (category != Category.ALL && matchedBrand.getCategory() != category) {
@@ -296,7 +286,7 @@ public class StoreQueryServiceImpl implements StoreQueryService{
 
         // 근처 검색
         List<StoreResDTO.SearchedStore> near = searchBrandNearby(
-                query, matchedBrand, distanceType, userLat, userLng, centerLat, centerLng
+                originalQuery, matchedBrand, distanceType, userLat, userLng, centerLat, centerLng
         );
 
         if (near != null && !near.isEmpty()) {
@@ -305,7 +295,7 @@ public class StoreQueryServiceImpl implements StoreQueryService{
 
         // 근처 결과가 없으면 전체 검색
         return searchBrandGlobal(
-                query, matchedBrand, userLat, userLng
+                originalQuery, matchedBrand, userLat, userLng
         );
     }
 
@@ -371,7 +361,7 @@ public class StoreQueryServiceImpl implements StoreQueryService{
 
     //멤버십명 검색 로직
     private List<StoreResDTO.SearchedStore> searchByMembership(
-            String query,
+            MembershipBrand membership,
             DistanceType distanceType,
             Category category,
             Double userLat,
@@ -379,11 +369,9 @@ public class StoreQueryServiceImpl implements StoreQueryService{
             Double centerLat,
             Double centerLng) {
 
-        Optional<MembershipBrand> membership = membershipBrandRepository.findByName(query);
-        if (membership.isEmpty()) return List.of();
 
         List<Long> storeBrandIds =
-                storeBrandMembershipBrandRepository.findStoreBrandIdsByMembershipBrandId(membership.get().getId());
+                storeBrandMembershipBrandRepository.findStoreBrandIdsByMembershipBrandId(membership.getId());
 
         if (storeBrandIds == null || storeBrandIds.isEmpty()) return List.of();
 
@@ -495,5 +483,28 @@ public class StoreQueryServiceImpl implements StoreQueryService{
                         .logoUrl(m.getLogoUrl())
                         .build())
                 .toList();
+    }
+
+    private Optional<MembershipBrand> resolveMembership(String query) {
+        String nq = StoreUtil.searchNormalize(query);
+        if (nq == null || nq.isBlank()) return Optional.empty();
+
+
+        Optional<MembershipBrand> exact = membershipBrandAliasRepository.findMembershipByNormalizedAlias(nq);
+        if (exact.isPresent()) return exact;
+
+        List<MembershipBrand> candidates = membershipBrandAliasRepository.findMembershipsContainedInQuery(nq);
+        return candidates.isEmpty() ? Optional.empty() : Optional.of(candidates.get(0));
+    }
+
+    private Optional<StoreBrand> resolveStoreBrand(String query) {
+        String nq = StoreUtil.searchNormalize(query);
+        if (nq == null || nq.isBlank()) return Optional.empty();
+
+        Optional<StoreBrand> exact = storeBrandAliasRepository.findBrandByNormalizedAlias(nq);
+        if (exact.isPresent()) return exact;
+
+        List<StoreBrand> candidates = storeBrandAliasRepository.findBrandsContainedInQuery(nq);
+        return candidates.isEmpty() ? Optional.empty() : Optional.of(candidates.get(0));
     }
 }

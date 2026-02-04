@@ -82,7 +82,6 @@ public class UserMembershipBrandQueryServiceImpl implements UserMembershipBrandQ
         if (umbOpt.isEmpty()) {
             return UserMembershipBrandResponseDTO.UserMembershipBarcodeDTO.builder()
                     .membershipNumber("")
-                    .barcodeRawValue("")
                     .logoUrl(brand.getLogoUrl())
                     .brandName(brand.getName())
                     .build();
