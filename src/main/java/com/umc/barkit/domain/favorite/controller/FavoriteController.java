@@ -6,11 +6,14 @@ import com.umc.barkit.domain.favorite.entity.FavoriteStoreBrand;
 import com.umc.barkit.domain.favorite.service.FavoriteService;
 import com.umc.barkit.global.apiPayload.ApiResponse;
 import com.umc.barkit.global.apiPayload.code.GeneralSuccessCode;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+@Tag(name = "Favorite", description = "즐겨찾기 관련 API")
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/favorites")
@@ -18,7 +21,10 @@ public class FavoriteController {
 
     private final FavoriteService favoriteService;
 
-    // 즐겨찾기 조회 (최대 5개)
+    @Operation(
+            summary = "즐겨찾기 목록 조회 (사용 안하는 api)",
+            description = "로그인 사용자가 즐겨찾기한 매장 목록을 최대 5개까지 조회합니다."
+    )
     @GetMapping
     public ApiResponse<List<FavoriteResponse>> getFavorites(
             @RequestHeader("Authorization") String token
@@ -33,7 +39,10 @@ public class FavoriteController {
         return ApiResponse.onSuccess(GeneralSuccessCode.OK, result);
     }
 
-    // 즐겨찾기 추가
+    @Operation(
+            summary = "즐겨찾기 추가 (사용 안하는 api)",
+            description = "특정 매장을 즐겨찾기에 추가합니다. 최대 5개까지 등록 가능하며, 중복 등록은 제한됩니다."
+    )
     @PostMapping
     public ApiResponse<Void> createFavorite(
             @RequestHeader("Authorization") String token,
@@ -45,7 +54,10 @@ public class FavoriteController {
         return ApiResponse.onSuccess(GeneralSuccessCode.OK, null);
     }
 
-    // 즐겨찾기 삭제
+    @Operation(
+            summary = "즐겨찾기 삭제 (사용 안하는 api)",
+            description = "즐겨찾기한 매장을 삭제합니다. 실제 DB 삭제가 아닌 Soft Delete 방식으로 처리됩니다."
+    )
     @DeleteMapping("/{favoriteId}")
     public ApiResponse<Void> deleteFavorite(
             @RequestHeader("Authorization") String token,
