@@ -17,6 +17,7 @@ import java.time.LocalDateTime;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
@@ -35,6 +36,7 @@ public class UserQueryService {
     }
 
     // 로그인
+    @Transactional
     public UserResponseDto.LoginResponseDto login(
             UserRequestDto.@Valid LoginRequestDto dto
     ) {
@@ -82,6 +84,7 @@ public class UserQueryService {
     }
 
     // 엑세스 토큰 재발급
+    @Transactional
     public String refreshAccessToken(String refreshToken) {
         // 요청 바디에 리프레쉬 토큰이 없으면 재발급 자체가 불가능
         if (refreshToken == null || refreshToken.isBlank()) {
@@ -107,13 +110,15 @@ public class UserQueryService {
         String refreshTokenHash = jwtUtil.hashToken(refreshToken);
 
         // 세션 존재 여부 확인
-        UserSession session = userSessionRepository.findByUserAndRefreshTokenHash(user, refreshTokenHash)
+        UserSession session = userSessionRepository.findByUserAndRefreshTokenHashAndRevokedAtIsNull(user, refreshTokenHash)
                 .orElseThrow(() -> new UserException(UserErrorCode.REFRESH_TOKEN_INVALID));
 
         // DB에 저장된 만료 시간 기준으로 세션 만료 여부 확인
         if (session.getExpiresAt().isBefore(LocalDateTime.now())) {
             throw new UserException(UserErrorCode.REFRESH_TOKEN_EXPIRED);
         }
+
+        session.touch();
 
         // 새 엑세스 토큰 발급
         CustomUserDetails userDetails = new CustomUserDetails(user);
@@ -130,5 +135,32 @@ public class UserQueryService {
         }
 
         return UserConverter.toPersonalInfoDto(user);
+    }
+
+    // 로그아웃
+    @Transactional
+    public void logout(String refreshToken) {
+        if (refreshToken == null || refreshToken.isBlank()) {
+            throw new UserException(UserErrorCode.REFRESH_TOKEN_REQUIRED);
+        }
+
+        if (!jwtUtil.isValid(refreshToken)) {
+            throw new UserException(UserErrorCode.REFRESH_TOKEN_INVALID);
+        }
+
+        String email = jwtUtil.getEmail(refreshToken);
+        if (email == null || email.isBlank()) {
+            throw new UserException(UserErrorCode.REFRESH_TOKEN_INVALID);
+        }
+
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new UserException(UserErrorCode.NOT_FOUND));
+
+        String refreshTokenHash = jwtUtil.hashToken(refreshToken);
+
+        UserSession session = userSessionRepository.findByUserAndRefreshTokenHashAndRevokedAtIsNull(user, refreshTokenHash)
+                .orElseThrow(() -> new UserException(UserErrorCode.REFRESH_TOKEN_INVALID));
+
+        session.revoke();
     }
 }

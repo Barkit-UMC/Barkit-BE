@@ -92,5 +92,12 @@ public class UserController implements UserControllerDocs{
         return ApiResponse.onSuccess(UserSuccessCode.PASSWORD_UPDATED, null);
     }
 
+    // 로그아웃 API
+    @PostMapping("/auth/logout")
+    public ApiResponse<Void> logout(@RequestBody @Valid UserRequestDto.RefreshRequestDto request) {
+        userQueryService.logout(request.refreshToken());
+        return ApiResponse.onSuccess(UserSuccessCode.LOGOUT_OK, null);
+    }
+
 
 }

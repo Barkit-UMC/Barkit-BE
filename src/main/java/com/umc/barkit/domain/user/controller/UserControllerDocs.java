@@ -99,4 +99,18 @@ public interface UserControllerDocs {
     ApiResponse<UserResponseDto.RefreshResponseDto> refresh(
             @RequestBody @Valid UserRequestDto.RefreshRequestDto request
     );
+
+    @Operation(
+            summary = "로그아웃 API",
+            description = "로그아웃을 수행합니다.<br>" +
+                    "서버는 Refresh Token을 무효화하여(세션 revoke 처리) 이후 Access Token 재발급을 차단합니다.<br>" +
+                    "로그아웃 이후 동일한 Refresh Token으로는 Access Token 재발급이 불가능합니다."
+    )
+    @ApiResponses({
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "로그아웃 성공"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "리프레시 토큰 누락/유효하지 않음/만료/이미 무효화됨")
+    })
+    ApiResponse<Void> logout(
+            @RequestBody @Valid UserRequestDto.RefreshRequestDto request
+    );
 }
