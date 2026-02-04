@@ -10,6 +10,7 @@ import com.umc.barkit.domain.store.exception.code.StoreErrorCode;
 import com.umc.barkit.domain.store.exception.code.StoreSuccessCode;
 import com.umc.barkit.domain.store.service.query.StoreQueryService;
 import com.umc.barkit.global.apiPayload.ApiResponse;
+import com.umc.barkit.global.auth.details.CustomUserDetails;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.RestController;
@@ -47,11 +48,17 @@ public class StoreController implements StoreControllerDocs{
     }
 
     @Override
-    public ApiResponse<StoreResDTO.StoreDetail> detail(String googleId, Double userLat, Double userLng) {
+    public ApiResponse<StoreResDTO.StoreDetail> detail(
+            CustomUserDetails userDetails,
+            String googleId,
+            Double userLat,
+            Double userLng
+    ) {
+        Long userId = userDetails.getUserId();
         StoreSuccessCode code = StoreSuccessCode.FOUND;
         return ApiResponse.onSuccess(
                 code,
-                storeQueryService.detail(googleId, userLat, userLng)
+                storeQueryService.detail(googleId, userLat, userLng, userId)
         );
     }
 }

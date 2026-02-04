@@ -8,9 +8,11 @@ import com.umc.barkit.domain.store.enums.Sort;
 import com.umc.barkit.global.annotation.ValidCursor;
 import com.umc.barkit.global.annotation.ValidSize;
 import com.umc.barkit.global.apiPayload.ApiResponse;
+import com.umc.barkit.global.auth.details.CustomUserDetails;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import jakarta.validation.Valid;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
@@ -56,6 +58,7 @@ public interface StoreControllerDocs {
 
     @GetMapping("/store")
     ApiResponse<StoreResDTO.StoreDetail> detail(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
             @RequestParam String googleId,
             @RequestParam("userLat") Double userLat,
             @RequestParam("userLng") Double userLng
