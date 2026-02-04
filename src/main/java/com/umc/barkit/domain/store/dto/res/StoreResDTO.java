@@ -52,6 +52,7 @@ public class StoreResDTO {
         private StoreContact contact;
         private StoreHourInfo hourInfo;
         private List<MembershipInfo> membership;
+        private List<UserMembershipInfo> userMembership;
         private List<StorePhotoInfo> photos;
     }
 
@@ -85,6 +86,12 @@ public class StoreResDTO {
             String url,
             Integer width,
             Integer height
+    ){}
+
+    @Builder
+    public record UserMembershipInfo(
+            String name,
+            String logoUrl
     ){}
 
 }

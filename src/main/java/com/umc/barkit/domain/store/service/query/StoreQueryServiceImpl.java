@@ -1,8 +1,12 @@
 package com.umc.barkit.domain.store.service.query;
 
 import com.umc.barkit.domain.membership.entity.MembershipBrand;
+import com.umc.barkit.domain.membership.entity.UserMembershipBrand;
+import com.umc.barkit.domain.membership.exception.MembershipException;
+import com.umc.barkit.domain.membership.exception.code.MembershipErrorCode;
 import com.umc.barkit.domain.membership.repository.MembershipBrandAliasRepository;
 import com.umc.barkit.domain.membership.repository.MembershipBrandRepository;
+import com.umc.barkit.domain.membership.repository.UserMembershipBrandRepository;
 import com.umc.barkit.domain.store.dto.google.GooglePlaceDTO;
 import com.umc.barkit.domain.store.dto.req.StoreReqDTO;
 import com.umc.barkit.domain.store.dto.res.StoreResDTO;
@@ -50,6 +54,7 @@ public class StoreQueryServiceImpl implements StoreQueryService{
     private final StoreBrandRepository storeBrandRepository;
     private final StoreBrandAliasRepository storeBrandAliasRepository;
     private final MembershipBrandAliasRepository membershipBrandAliasRepository;
+    private final UserMembershipBrandRepository userMembershipBrandRepository;
 
     private final GoogleMapSearchClient googleClient;
     private final StoreCommandService storeCommandService;
@@ -132,7 +137,7 @@ public class StoreQueryServiceImpl implements StoreQueryService{
 
     @Transactional
     @Override
-    public StoreResDTO.StoreDetail detail(String googleId, Double userLat, Double userLng) {
+    public StoreResDTO.StoreDetail detail(String googleId, Double userLat, Double userLng,Long userId) {
 
         // DB 조회
         Store store = storeRepository.findByGoogleId(googleId)
@@ -187,7 +192,7 @@ public class StoreQueryServiceImpl implements StoreQueryService{
                 .build();
 
 
-        // 멤버십 조회
+        // 전체 멤버십 조회
         List<StoreBrandMembershipBrand> membershipEntities =
                 storeBrandMembershipBrandRepository.findByStoreBrandId(store.getBrand().getId());
 
@@ -198,6 +203,36 @@ public class StoreQueryServiceImpl implements StoreQueryService{
                         .build())
                 .toList();
 
+        //보유 멤버십 조회
+        List<Long> storeMembershipBrandIds = membershipEntities.stream()
+                .map(m -> m.getMembershipBrand().getId())
+                .toList();
+
+        List<UserMembershipBrand> userMembershipEntities = userMembershipBrandRepository.findByUserId(userId);
+
+
+        List<Long> userMembershipBrandIds = userMembershipEntities.stream()
+                .map(UserMembershipBrand::getMembershipBrandId)
+                .toList();
+
+
+        List<Long> intersectionIds = storeMembershipBrandIds.stream()
+                .filter(userMembershipBrandIds::contains)
+                .toList();
+
+        List<StoreResDTO.UserMembershipInfo> userMembershipInfos = intersectionIds.stream()
+                .map(id -> {
+                    MembershipBrand brand = membershipBrandRepository.findById(id)
+                            .orElseThrow(() -> new MembershipException(MembershipErrorCode.BRAND4001));
+                    return StoreResDTO.UserMembershipInfo.builder()
+                            .name(brand.getName())
+                            .logoUrl(brand.getLogoUrl())
+                            .build();
+                })
+                .toList();
+
+
+
         // DTO 조립
         return StoreResDTO.StoreDetail.builder()
                 .name(g.displayName() != null ? g.displayName().text() : "이름 정보 없음")
@@ -206,6 +241,7 @@ public class StoreQueryServiceImpl implements StoreQueryService{
                 .contact(contact)
                 .hourInfo(hourInfo)
                 .membership(membershipInfos)
+                .userMembership(userMembershipInfos)
                 .photos(photos)
                 .build();
     }
