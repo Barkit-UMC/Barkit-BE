@@ -111,7 +111,7 @@ public class UserMembershipBrandQueryServiceImpl implements UserMembershipBrandQ
         // 0. pageSize 보정 로직 (여기!)
         int pageSize = (size == null || size <= 0) ? 20 : size;
 
-        Pageable pageable = PageRequest.of(0, pageSize);
+        Pageable pageable = PageRequest.of(0, pageSize + 1);
 
         // 1. 사용자 멤버십 검증
         UserMembershipBrand umb =
@@ -147,15 +147,29 @@ public class UserMembershipBrandQueryServiceImpl implements UserMembershipBrandQ
                         cursor,
                         pageable
                 );
+        // 다음 페이지 존재 여부
+        boolean hasNext = stores.size() > pageSize;
+
+        // 실제 반환할 데이터
+        List<Store> resultStores = hasNext
+                ? stores.subList(0, pageSize)
+                : stores;
+
+        // nextCursor 계산
+        Long nextCursor = hasNext
+                ? resultStores.get(resultStores.size() - 1).getId()
+                : null;
 
         // 5. DTO 변환
         List<UserMembershipBrandResponseDTO.AvailableStoreDTO> storeDTOs =
-                stores.stream()
-                        .map(store -> userMembershipBrandConverter.toAvailableStoreDTO(store))
+                resultStores.stream()
+                        .map(userMembershipBrandConverter::toAvailableStoreDTO)
                         .toList();
 
         return UserMembershipBrandResponseDTO.AvailableStoreListDTO.builder()
                 .stores(storeDTOs)
+                .hasNext(hasNext)
+                .nextCursor(nextCursor)
                 .build();
     }
 }

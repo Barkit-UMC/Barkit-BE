@@ -52,6 +52,8 @@ public class UserMembershipBrandResponseDTO {
     @AllArgsConstructor
     public static class AvailableStoreListDTO {
         private List<AvailableStoreDTO> stores;
+        private Boolean hasNext;
+        private Long nextCursor;
     }
 
     @Getter
