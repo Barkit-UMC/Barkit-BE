@@ -15,6 +15,9 @@ public enum GeneralErrorCode implements BaseErrorCode {
     NOT_FOUND(HttpStatus.NOT_FOUND, "COMMON4004", "요청한 리소스를 찾을 수 없습니다."),
     INTERNAL_SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "COMMON5000", "서버 에러, 관리자에게 문의 바랍니다."),
 
+    // ===== Valid =====
+    VALID_FAIL(HttpStatus.BAD_REQUEST, "VALID4001", "검증에 실패했습니다."),
+
     // ===== Kakao API =====
     KAKAO_NO_RESULT(HttpStatus.NOT_FOUND, "KAKAO4001", "카카오 API 검색 결과가 없습니다."),
     KAKAO_API_ERROR(HttpStatus.BAD_GATEWAY, "KAKAO5001", "카카오 API 호출 중 오류가 발생했습니다."),

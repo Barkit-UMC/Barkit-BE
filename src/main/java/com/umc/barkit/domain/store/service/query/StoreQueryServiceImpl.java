@@ -312,13 +312,13 @@ public class StoreQueryServiceImpl implements StoreQueryService{
         Double sendLat = (distanceType == DistanceType.CURRENT) ? userLat : centerLat;
         Double sendLng = (distanceType == DistanceType.CURRENT) ? userLng : centerLng;
 
+        // 검색 반경 5km 필터 적용
         List<GoogleResDTO.Place> places = googleClient.searchText(query, sendLat, sendLng);
         if (places == null || places.isEmpty()) return List.of();
 
         List<StoreResDTO.SearchedStoreMembership> membershipsDTO =
                 findMembershipsForStoreBrand(matchedBrand.getId());
 
-        // 검색 반경 5km 필터 적용
         return storeCommandService.saveAndMap(
                 matchedBrand,
                 places,
@@ -340,13 +340,13 @@ public class StoreQueryServiceImpl implements StoreQueryService{
             Double userLng
     ) {
         // 위치 없이 호출
+        // 검색 반경 5km 필터 미적용
         List<GoogleResDTO.Place> places = googleClient.searchText(query);
         if (places == null || places.isEmpty()) return List.of();
 
         List<StoreResDTO.SearchedStoreMembership> membershipsDTO =
                 findMembershipsForStoreBrand(matchedBrand.getId());
 
-        // 검색 반경 5km 필터 미적용
         return storeCommandService.saveAndMap(
                 matchedBrand,
                 places,

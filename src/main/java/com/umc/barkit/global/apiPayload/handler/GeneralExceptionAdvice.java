@@ -4,9 +4,17 @@ import com.umc.barkit.global.apiPayload.ApiResponse;
 import com.umc.barkit.global.apiPayload.code.BaseErrorCode;
 import com.umc.barkit.global.apiPayload.code.GeneralErrorCode;
 import com.umc.barkit.global.apiPayload.exception.GeneralException;
+import jakarta.validation.ConstraintViolationException;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.BindException;
+import org.springframework.validation.FieldError;
+import org.springframework.web.ErrorResponse;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+
+import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * 전역 Exception Handler
