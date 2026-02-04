@@ -36,14 +36,12 @@ public class UserMembershipBrandResponseDTO {
     public static class RegisterMembershipResultDTO {
         private Long userMembershipBrandId;
         private String membershipNumber;
-        private String barcodeRawValue;
     }
     @Getter
     @Builder
     @AllArgsConstructor
     public static class UserMembershipBarcodeDTO {
         private String membershipNumber;
-        private String barcodeRawValue;
         private String logoUrl;
         private String brandName;
     }

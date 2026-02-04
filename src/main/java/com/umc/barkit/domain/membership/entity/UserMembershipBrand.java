@@ -22,13 +22,9 @@ public class UserMembershipBrand extends BaseEntity {
     @Column(name = "membership_brand_id", nullable = false)
     private Long membershipBrandId;
 
-    @Column(name = "membership_number", length = 30)
+    @Column(name = "membership_number", nullable = false, length = 30)
     private String membershipNumber;
 
-    @Column(name = "barcode_raw_value", nullable = false, length = 50)
-    private String barcodeRawValue;
-
-    @Builder.Default
     @Column(name = "is_main", nullable = false)
     private Boolean isMain = false;
 
