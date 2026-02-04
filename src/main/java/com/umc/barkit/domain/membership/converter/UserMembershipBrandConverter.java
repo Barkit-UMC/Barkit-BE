@@ -99,7 +99,7 @@ public class UserMembershipBrandConverter {
 
         return UserMembershipBrandResponseDTO.AvailableStoreDTO.builder()
                 .storeId(store.getId())
-                .storeName(brand.getName())   // 아직 지점명 없음
+                //.storeName(brand.getName())   // 아직 지점명 없음
                 .brandName(brand.getName())
                 .logoUrl(brand.getLogoUrl())
                 .address(null)                // 1단계: null
