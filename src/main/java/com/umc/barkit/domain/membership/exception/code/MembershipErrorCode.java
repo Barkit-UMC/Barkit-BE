@@ -20,18 +20,14 @@ public enum MembershipErrorCode implements BaseErrorCode {
     MEMBERSHIP4004(HttpStatus.NOT_FOUND,"MEMBERSHIP4004","등록된 사용자 멤버십이 존재하지 않습니다."),
     MEMBERSHIP4006(HttpStatus.FORBIDDEN, "MEMBERSHIP4006", "본인의 멤버십만 대표 멤버십으로 설정할 수 있습니다."),
     MEMBERSHIP4007(HttpStatus.BAD_REQUEST, "MEMBERSHIP4007", "대표 멤버십은 최대 3개까지 설정할 수 있습니다."),
-    // ========== 바코드 에러 (BARCODE) ==========
-    BARCODE4001(HttpStatus.BAD_REQUEST, "BARCODE4001", "지원하지 않는 바코드 형식입니다."),
+    MEMBERSHIP4008(HttpStatus.BAD_REQUEST, "MEMBERSHIP4008", "멤버십 번호는 최소 12자 이상이어야 합니다."),
+    MEMBERSHIP4009(HttpStatus.CONFLICT, "MEMBERSHIP4009", "이미 저장된 멤버십 브랜드입니다."),
 
-    // ========== 사진 에러 (PHOTO) ==========
-    PHOTO4001(HttpStatus.BAD_REQUEST, "PHOTO4001", "사진을 업로드해주세요."),
-    PHOTO4002(HttpStatus.BAD_REQUEST, "PHOTO4002", "사진 크기는 최대 10MB까지 가능합니다."),
-    PHOTO4003(HttpStatus.BAD_REQUEST, "PHOTO4003", "jpg, png 형식만 업로드 가능합니다."),
-    PHOTO4004(HttpStatus.BAD_REQUEST, "PHOTO4004", "이미지 파일이 손상되었거나 읽을 수 없습니다.");
+    // ========== 바코드 에러 (BARCODE) ==========
+    BARCODE4001(HttpStatus.BAD_REQUEST, "BARCODE4001", "지원하지 않는 바코드 형식입니다.");
 
     private final HttpStatus status;
     private final String code;
     private final String message;
-
 
 }
