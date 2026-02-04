@@ -74,6 +74,7 @@ public class HomeDashboardServiceImpl implements HomeDashboardService {
                                     membershipBrandMap.get(userMembership.getMembershipBrandId());
 
                             return HomeDashboardResponse.MembershipSummaryDTO.builder()
+                                    .userMembershipBrandId(userMembership.getId()) // 추가됨
                                     .membershipBrandId(brand.getId())
                                     .name(brand.getName())
                                     .logoUrl(brand.getLogoUrl())
