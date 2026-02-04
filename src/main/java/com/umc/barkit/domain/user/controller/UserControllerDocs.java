@@ -87,4 +87,16 @@ public interface UserControllerDocs {
             @AuthenticationPrincipal CustomUserDetails userDetails,
             @Valid @RequestBody UserRequestDto.UpdatePasswordRequestDto request
     );
+
+    @Operation(
+            summary = "액세스 토큰 재발급 API",
+            description = "Access Token 만료 시, Refresh Token을 이용해 새로운 Access Token을 발급합니다."
+    )
+    @ApiResponses({
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "재발급 성공"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "리프레시 토큰 누락/유효하지 않음/만료")
+    })
+    ApiResponse<UserResponseDto.RefreshResponseDto> refresh(
+            @RequestBody @Valid UserRequestDto.RefreshRequestDto request
+    );
 }

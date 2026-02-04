@@ -70,4 +70,10 @@ public class UserRequestDto {
             @NotNull
             String confirmPassword
     ) {}
+
+    // 엑세스 토큰 재발급
+    public record RefreshRequestDto(
+            @NotBlank
+            String refreshToken
+    ) {}
 }

@@ -58,6 +58,17 @@ public class UserController implements UserControllerDocs{
         return ApiResponse.onSuccess(UserSuccessCode.PERSONAL_INFO_OK, response);
     }
 
+    // 액세스 토큰 재발급 API
+    @PostMapping("/auth/refresh")
+    public ApiResponse<UserResponseDto.RefreshResponseDto> refresh(
+            @RequestBody @Valid UserRequestDto.RefreshRequestDto request
+    ) {
+        String newAccessToken = userQueryService.refreshAccessToken(request.refreshToken());
+        return ApiResponse.onSuccess(
+                UserSuccessCode.TOKEN_REFRESH_OK,
+                new UserResponseDto.RefreshResponseDto(newAccessToken)
+        );
+    }
 
     // 생년월일 변경 API
     @PatchMapping("/users/me/birth-date")
@@ -71,6 +82,7 @@ public class UserController implements UserControllerDocs{
         return ApiResponse.onSuccess(UserSuccessCode.BIRTH_DATE_UPDATED, response);
     }
 
+    // 비밀번호 변경 API
     @PatchMapping("/users/me/password")
     public ApiResponse<Void> updatePassword(
             @AuthenticationPrincipal CustomUserDetails userDetails,
