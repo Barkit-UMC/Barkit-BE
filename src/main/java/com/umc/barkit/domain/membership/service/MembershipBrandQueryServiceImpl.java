@@ -18,9 +18,9 @@ public class MembershipBrandQueryServiceImpl implements MembershipBrandQueryServ
     private final MembershipBrandRepository membershipBrandRepository;
 
     @Override
-    public MembershipBrandResponseDTO.Top4BrandsDTO getTop4MembershipBrands() {
-        List<MembershipBrand> top4Brands = membershipBrandRepository.findTop4ByRegistrationCount();
-        return MembershipBrandConverter.toTop4BrandsDTO(top4Brands);
+    public MembershipBrandResponseDTO.DefaultBrandsDTO getDefaultMembershipBrands() {
+        List<MembershipBrand> defaultBrands = membershipBrandRepository.findTop10ByRegistrationCountForDefault();
+        return MembershipBrandConverter.toDefaultBrandsDTO(defaultBrands);
     }
 
     @Override
