@@ -62,10 +62,8 @@ public class UserMembershipBrandResponseDTO {
     @AllArgsConstructor
     public static class AvailableStoreDTO {
         private Long storeId;
-        private String storeName;
         private String brandName;
         private String logoUrl;
-        private String address; // 지금은 null
     }
 
 }

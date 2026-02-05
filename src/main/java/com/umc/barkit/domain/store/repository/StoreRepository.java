@@ -2,6 +2,7 @@ package com.umc.barkit.domain.store.repository;
 
 import com.umc.barkit.domain.store.entity.Store;
 import com.umc.barkit.domain.store.repository.projection.ViewCountProjection;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -25,20 +26,14 @@ public interface StoreRepository extends JpaRepository<Store,Long> {
 
     //  멤버십 기준 매장 조회 (검색 optional)
     @Query("""
-    select distinct s
+    select s.id
     from Store s
-    join s.brand sb
-    where sb.id in :storeBrandIds
-      and (:keyword is null
-           or lower(sb.name) like lower(concat('%', :keyword, '%')))
-      and (:cursor is null or s.id > :cursor)
+    where s.brand.id = :brandId
     order by s.id asc
-    """)
-    List<Store> findStoresByStoreBrandIdsAndKeyword(
-            @Param("storeBrandIds") List<Long> storeBrandIds,
-            @Param("keyword") String keyword,
-            @Param("cursor") Long cursor,
-            org.springframework.data.domain.Pageable pageable
+""")
+    List<Long> findStoreIdsByBrandId(
+            @Param("brandId") Long brandId,
+            Pageable pageable
     );
 
 }
