@@ -16,10 +16,10 @@ public class StoreBrandAlias {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "alias", length = 20, unique = true)
+    @Column(name = "alias", length = 50, unique = true)
     private String alias;
 
-    @Column(name = "normalized_alias", nullable = false, length = 20)
+    @Column(name = "normalized_alias", nullable = false, length = 50)
     private String normalizedAlias;
 
     @ManyToOne(fetch = FetchType.LAZY)
