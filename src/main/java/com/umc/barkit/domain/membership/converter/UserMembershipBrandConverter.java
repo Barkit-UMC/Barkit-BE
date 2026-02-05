@@ -8,6 +8,7 @@ import com.umc.barkit.domain.membership.entity.UserMembershipBrand;
 import com.umc.barkit.domain.membership.exception.MembershipException;
 import com.umc.barkit.domain.membership.exception.code.MembershipErrorCode;
 import com.umc.barkit.domain.membership.repository.MembershipBrandRepository;
+import com.umc.barkit.domain.store.entity.StoreBrand;
 import com.umc.barkit.global.apiPayload.code.GeneralErrorCode;
 import com.umc.barkit.global.apiPayload.exception.GeneralException;
 import lombok.RequiredArgsConstructor;
@@ -86,11 +87,27 @@ public class UserMembershipBrandConverter {
                 .brandName(brand.getName())
                 .build();
     }
+
+    public UserMembershipBrandResponseDTO.MembershipDetailDTO toMembershipDetailDTO(
+            UserMembershipBrand userMembershipBrand,
+            MembershipBrand membershipBrand,
+            List<StoreBrand> storeBrands
+    ) {
+        List<UserMembershipBrandResponseDTO.StoreBrandDTO> storeBrandDTOs = storeBrands.stream()
+                .map(store -> UserMembershipBrandResponseDTO.StoreBrandDTO.builder()
+                        .storeBrandId(store.getId())
+                        .name(store.getName())
+                        .logoUrl(store.getLogoUrl())
+                        .build())
+                .collect(Collectors.toList());
+
+        return UserMembershipBrandResponseDTO.MembershipDetailDTO.builder()
+                .userMembershipBrandId(userMembershipBrand.getId())
+                .membershipBrandName(membershipBrand.getName())
+                .themeColor(membershipBrand.getColor())
+                .logoUrl(membershipBrand.getLogoUrl())
+                .membershipNumber(userMembershipBrand.getMembershipNumber())
+                .storeBrands(storeBrandDTOs)
+                .build();
+    }
 }
-
-
-
-
-
-
-

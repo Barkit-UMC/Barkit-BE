@@ -1,6 +1,7 @@
 package com.umc.barkit.domain.membership.repository;
 
 import com.umc.barkit.domain.membership.entity.UserMembershipBrand;
+import com.umc.barkit.domain.store.entity.StoreBrand;
 
 import java.util.List;
 
@@ -19,4 +20,7 @@ public interface UserMembershipBrandRepositoryCustom {
 
     // 대표 멤버십 개수 조회
     int countMainByUserId(Long userId);
+
+    // 멤버십 브랜드에 연관된 StoreBrand 목록 조회
+    List<StoreBrand> findStoreBrandsByMembershipBrandId(Long membershipBrandId);
 }

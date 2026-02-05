@@ -14,4 +14,9 @@ public interface UserMembershipBrandQueryService {
 
     UserMembershipBrandResponseDTO.UserMembershipBarcodeDTO getUserMembershipBarcode(Long userId,Long membershipBrandId);
 
+    // 사용자 보유 특정 멤버십 상세 정보 조회
+    UserMembershipBrandResponseDTO.MembershipDetailDTO getMembershipDetail(
+            Long userId,
+            Long userMembershipBrandId
+    );
 }

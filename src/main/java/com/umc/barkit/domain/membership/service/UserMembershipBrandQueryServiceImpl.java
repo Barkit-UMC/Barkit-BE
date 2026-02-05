@@ -12,6 +12,7 @@ import com.umc.barkit.domain.membership.entity.UserMembershipBrand;
 import com.umc.barkit.domain.membership.exception.code.MembershipErrorCode;
 import com.umc.barkit.domain.membership.repository.MembershipBrandRepository;
 import com.umc.barkit.domain.membership.repository.UserMembershipBrandRepository;
+import com.umc.barkit.domain.store.entity.StoreBrand;
 import com.umc.barkit.global.apiPayload.code.BaseErrorCode;
 
 import lombok.RequiredArgsConstructor;
@@ -90,5 +91,35 @@ public class UserMembershipBrandQueryServiceImpl implements UserMembershipBrandQ
         return userMembershipBrandConverter.toBarcodeDTO(umbOpt.get());
     }
 
+    @Override
+    public UserMembershipBrandResponseDTO.MembershipDetailDTO getMembershipDetail(
+            Long userId,
+            Long userMembershipBrandId
+    ) {
+        // 1. UserMembershipBrand 조회
+        UserMembershipBrand userMembershipBrand = userMembershipBrandRepository
+                .findById(userMembershipBrandId)
+                .orElseThrow(() -> new MembershipException(MembershipErrorCode.MEMBERSHIP4004));
 
+        // 2. 본인 소유 확인
+        if (!userMembershipBrand.getUserId().equals(userId)) {
+            throw new MembershipException(MembershipErrorCode.MEMBERSHIP4005);
+        }
+
+        // 3. MembershipBrand 조회
+        MembershipBrand membershipBrand = membershipBrandRepository
+                .findById(userMembershipBrand.getMembershipBrandId())
+                .orElseThrow(() -> new MembershipException(MembershipErrorCode.BRAND4001));
+
+        // 4. 적립/할인 가능한 StoreBrand 목록 조회
+        List<StoreBrand> storeBrands = userMembershipBrandRepository
+                .findStoreBrandsByMembershipBrandId(userMembershipBrand.getMembershipBrandId());
+
+        // 5. DTO 변환 및 반환
+        return userMembershipBrandConverter.toMembershipDetailDTO(
+                userMembershipBrand,
+                membershipBrand,
+                storeBrands
+        );
+    }
 }

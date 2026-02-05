@@ -37,6 +37,7 @@ public class UserMembershipBrandResponseDTO {
         private Long userMembershipBrandId;
         private String membershipNumber;
     }
+
     @Getter
     @Builder
     @AllArgsConstructor
@@ -44,5 +45,28 @@ public class UserMembershipBrandResponseDTO {
         private String membershipNumber;
         private String logoUrl;
         private String brandName;
+    }
+
+    @Getter
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class MembershipDetailDTO {
+        private Long userMembershipBrandId;
+        private String membershipBrandName;
+        private String themeColor;
+        private String logoUrl;
+        private String membershipNumber;
+        private List<StoreBrandDTO> storeBrands;
+    }
+
+    @Getter
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class StoreBrandDTO {
+        private Long storeBrandId;
+        private String name;
+        private String logoUrl;
     }
 }
