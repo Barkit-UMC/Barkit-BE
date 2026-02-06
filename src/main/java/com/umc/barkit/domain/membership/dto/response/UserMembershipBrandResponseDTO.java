@@ -51,6 +51,26 @@ public class UserMembershipBrandResponseDTO {
     @Builder
     @NoArgsConstructor
     @AllArgsConstructor
+    public static class AvailableStoreListDTO {
+        private List<AvailableStoreDTO> stores;
+        private Boolean hasNext;
+        private Long nextCursor;
+    }
+
+    @Getter
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class AvailableStoreDTO {
+        private Long storeId;
+        private String brandName;
+        private String logoUrl;
+    }
+  
+    @Getter
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
     public static class MembershipDetailDTO {
         private Long userMembershipBrandId;
         private String membershipBrandName;
@@ -69,4 +89,5 @@ public class UserMembershipBrandResponseDTO {
         private String name;
         private String logoUrl;
     }
+
 }
