@@ -112,7 +112,7 @@ public class UserMembershipBrandConverter {
                 .storeBrands(storeBrandDTOs)
                 .build();
     }
-}
+
     /* =========================
        사용 가능 매장 조회(브랜드)
      ========================= */
@@ -130,7 +130,6 @@ public class UserMembershipBrandConverter {
                 .build();
     }
 }
-
 
 
 
