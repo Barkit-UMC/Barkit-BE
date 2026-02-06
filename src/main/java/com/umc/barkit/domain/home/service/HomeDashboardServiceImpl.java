@@ -25,33 +25,10 @@ public class HomeDashboardServiceImpl implements HomeDashboardService {
     @Override
     public HomeDashboardResponse.DashboardDTO getDashboard(Long userId) {
 
-        /**
-         * 사용자 보유 멤버십 정렬 규칙
-         *
-         * 1. 대표 멤버십(isMain = true) 우선 노출
-         * 2. 동일 조건 내에서는 등록순(createdAt ASC)
-         *
-         * → 홈 화면에서 대표 멤버십을 가장 먼저 보여주기 위한 UX 정책
-         */
         List<UserMembershipBrand> userMemberships =
-                userMembershipBrandRepository.findByUserId(userId)
-                        .stream()
-                        .sorted(
-                                Comparator
-                                        .comparing(
-                                                UserMembershipBrand::getIsMain,
-                                                Comparator.nullsLast(Boolean::compareTo)
-                                        ).reversed()
-                                        .thenComparing(
-                                                UserMembershipBrand::getCreatedAt,
-                                                Comparator.nullsLast(Comparator.naturalOrder())
-                                        )
-                        )
-                        .toList();
+                userMembershipBrandRepository.findByUserId(userId);
 
-        /**
-         * MembershipBrand 조회 (ID → Entity 매핑)
-         */
+        // MembershipBrand 매핑
         Map<Long, MembershipBrand> membershipBrandMap =
                 membershipBrandRepository.findAllById(
                                 userMemberships.stream()
@@ -64,17 +41,41 @@ public class HomeDashboardServiceImpl implements HomeDashboardService {
                                 brand -> brand
                         ));
 
-        /**
-         * DTO 변환
-         */
-        List<HomeDashboardResponse.MembershipSummaryDTO> membershipDTOs =
+        // 1. 대표 멤버십 (isMain = true)
+        List<HomeDashboardResponse.MainMembershipDTO> mainMemberships =
                 userMemberships.stream()
-                        .map(userMembership -> {
+                        .filter(UserMembershipBrand::getIsMain)
+                        .sorted(Comparator.comparing(
+                                UserMembershipBrand::getCreatedAt,
+                                Comparator.nullsLast(Comparator.naturalOrder())
+                        ))
+                        .map(umb -> {
                             MembershipBrand brand =
-                                    membershipBrandMap.get(userMembership.getMembershipBrandId());
+                                    membershipBrandMap.get(umb.getMembershipBrandId());
+
+                            return HomeDashboardResponse.MainMembershipDTO.builder()
+                                    .userMembershipBrandId(umb.getId())
+                                    .membershipBrandId(brand.getId())
+                                    .name(brand.getName())
+                                    .logoUrl(brand.getLogoUrl())
+                                    .membershipNumber(umb.getMembershipNumber()) // 바코드용
+                                    .build();
+                        })
+                        .toList();
+
+        // 2. 전체 멤버십 (대표 멤버십 포함)
+        List<HomeDashboardResponse.MembershipSummaryDTO> memberships =
+                userMemberships.stream()
+                        .sorted(Comparator.comparing(
+                                UserMembershipBrand::getCreatedAt,
+                                Comparator.nullsLast(Comparator.naturalOrder())
+                        ))
+                        .map(umb -> {
+                            MembershipBrand brand =
+                                    membershipBrandMap.get(umb.getMembershipBrandId());
 
                             return HomeDashboardResponse.MembershipSummaryDTO.builder()
-                                    .userMembershipBrandId(userMembership.getId()) // 추가됨
+                                    .userMembershipBrandId(umb.getId())
                                     .membershipBrandId(brand.getId())
                                     .name(brand.getName())
                                     .logoUrl(brand.getLogoUrl())
@@ -83,7 +84,8 @@ public class HomeDashboardServiceImpl implements HomeDashboardService {
                         .toList();
 
         return HomeDashboardResponse.DashboardDTO.builder()
-                .memberships(membershipDTOs)
+                .mainMemberships(mainMemberships)
+                .memberships(memberships)
                 .build();
     }
 }
