@@ -12,16 +12,24 @@ import com.umc.barkit.domain.membership.entity.UserMembershipBrand;
 import com.umc.barkit.domain.membership.exception.code.MembershipErrorCode;
 import com.umc.barkit.domain.membership.repository.MembershipBrandRepository;
 import com.umc.barkit.domain.membership.repository.UserMembershipBrandRepository;
+import com.umc.barkit.domain.store.entity.StoreBrand;
+import com.umc.barkit.domain.store.repository.StoreBrandMembershipBrandRepository;
+import com.umc.barkit.domain.store.entity.Store;
+import com.umc.barkit.domain.store.repository.StoreBrandRepository;
+import com.umc.barkit.domain.store.repository.StoreRepository;
 import com.umc.barkit.global.apiPayload.code.BaseErrorCode;
+import com.umc.barkit.domain.store.external.google.GoogleMapSearchClient;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
+import java.util.stream.Collectors;
 
 import com.umc.barkit.domain.membership.exception.MembershipException;
 
@@ -35,6 +43,10 @@ public class UserMembershipBrandQueryServiceImpl implements UserMembershipBrandQ
     private final UserMembershipBrandRepository userMembershipBrandRepository;
     private final UserMembershipBrandConverter userMembershipBrandConverter;
     private final MembershipBrandRepository membershipBrandRepository;
+    private final StoreBrandMembershipBrandRepository storeBrandMembershipBrandRepository;
+    private final StoreRepository storeRepository;
+    private final GoogleMapSearchClient googleMapSearchClient;
+    private final StoreBrandRepository storeBrandRepository;
 
     @Override
     public UserMembershipBrandResponseDTO.SearchResultDTO searchUserMembershipBrands(
@@ -90,5 +102,83 @@ public class UserMembershipBrandQueryServiceImpl implements UserMembershipBrandQ
         return userMembershipBrandConverter.toBarcodeDTO(umbOpt.get());
     }
 
+    @Override
+    public UserMembershipBrandResponseDTO.AvailableStoreListDTO getAvailableStores(
+            Long userId,
+            Long userMembershipBrandId,
+            String keyword,
+            Long cursor,
+            Integer size
+    ) {
+        int pageSize = (size == null || size <= 0) ? 20 : size;
+
+        // 1. 사용자 멤버십 검증
+        UserMembershipBrand umb =
+                userMembershipBrandRepository.findById(userMembershipBrandId)
+                        .orElseThrow(() ->
+                                new MembershipException(MembershipErrorCode.MEMBERSHIP4001));
+
+        if (!umb.getUserId().equals(userId)) {
+            throw new MembershipException(MembershipErrorCode.MEMBERSHIP4003);
+        }
+
+        // 2. 멤버십 브랜드 ID
+        Long membershipBrandId = umb.getMembershipBrandId();
+
+        // 3. 멤버십 → StoreBrand IDs
+        List<Long> storeBrandIds =
+                storeBrandMembershipBrandRepository
+                        .findStoreBrandIdsByMembershipBrandId(membershipBrandId);
+
+        if (storeBrandIds.isEmpty()) {
+            return UserMembershipBrandResponseDTO.AvailableStoreListDTO.builder()
+                    .stores(List.of())
+                    .hasNext(false)
+                    .nextCursor(null)
+                    .build();
+        }
+
+        // 4. StoreBrand 조회 (지점 존재하는 브랜드만)
+        List<StoreBrand> brands =
+                storeBrandRepository.findAvailableStoreBrands(
+                        storeBrandIds,
+                        keyword,
+                        cursor,
+                        PageRequest.of(0, pageSize + 1)
+                );
+
+        boolean hasNext = brands.size() > pageSize;
+
+        List<StoreBrand> resultBrands = hasNext
+                ? brands.subList(0, pageSize)
+                : brands;
+
+        Long nextCursor = hasNext
+                ? resultBrands.get(resultBrands.size() - 1).getId()
+                : null;
+
+        // 5. DTO 변환 (대표 store 1개만 사용)
+        List<UserMembershipBrandResponseDTO.AvailableStoreDTO> storeDTOs =
+                resultBrands.stream()
+                        .map(brand -> {
+                            Long storeId =
+                                    storeRepository
+                                            .findStoreIdsByBrandId(brand.getId(), PageRequest.of(0, 1))
+                                            .get(0);
+
+                            return UserMembershipBrandResponseDTO.AvailableStoreDTO.builder()
+                                    .storeId(storeId)
+                                    .brandName(brand.getName())
+                                    .logoUrl(brand.getLogoUrl())
+                                    .build();
+                        })
+                        .toList();
+
+        return UserMembershipBrandResponseDTO.AvailableStoreListDTO.builder()
+                .stores(storeDTOs)
+                .hasNext(hasNext)
+                .nextCursor(nextCursor)
+                .build();
+    }
 
 }

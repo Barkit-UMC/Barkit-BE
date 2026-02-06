@@ -3,6 +3,7 @@ package com.umc.barkit.domain.store.repository;
 import com.umc.barkit.domain.store.entity.StoreBrand;
 import com.umc.barkit.domain.store.enums.Category;
 import com.umc.barkit.domain.store.repository.projection.BrandIdNameProjection;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -48,4 +49,26 @@ public interface StoreBrandRepository extends JpaRepository<StoreBrand,Long> {
 //            "order by length(sb.name) desc"
         )
     Optional<StoreBrand> findMatchedBrand(String query);
+
+    @Query("""
+    select sb
+    from StoreBrand sb
+    where sb.id in :storeBrandIds
+      and exists (
+          select 1
+          from Store s
+          where s.brand = sb
+            and (:cursor is null or sb.id > :cursor)
+      )
+      and (:keyword is null
+           or lower(sb.name) like lower(concat('%', :keyword, '%')))
+    order by sb.id asc
+    """)
+    List<StoreBrand> findAvailableStoreBrands(
+            @Param("storeBrandIds") List<Long> storeBrandIds,
+            @Param("keyword") String keyword,
+            @Param("cursor") Long cursor,
+            Pageable pageable
+    );
+
 }

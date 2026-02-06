@@ -14,4 +14,12 @@ public interface UserMembershipBrandQueryService {
 
     UserMembershipBrandResponseDTO.UserMembershipBarcodeDTO getUserMembershipBarcode(Long userId,Long membershipBrandId);
 
+    UserMembershipBrandResponseDTO.AvailableStoreListDTO getAvailableStores(
+            Long userId,
+            Long userMembershipBrandId,
+            String keyword,
+            Long cursor,
+            Integer size
+    );
+
 }
