@@ -4,6 +4,7 @@ import com.querydsl.core.BooleanBuilder;
 import com.querydsl.core.types.dsl.Expressions;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import com.umc.barkit.domain.membership.entity.UserMembershipBrand;
+import com.umc.barkit.domain.store.entity.StoreBrand;
 import lombok.RequiredArgsConstructor;
 
 import java.util.HashMap;
@@ -12,6 +13,8 @@ import java.util.Map;
 
 import static com.umc.barkit.domain.membership.entity.QMembershipBrand.membershipBrand;
 import static com.umc.barkit.domain.membership.entity.QUserMembershipBrand.userMembershipBrand;
+import static com.umc.barkit.domain.store.entity.QStoreBrand.storeBrand;
+import static com.umc.barkit.domain.store.entity.mapping.QStoreBrandMembershipBrand.storeBrandMembershipBrand;
 
 @RequiredArgsConstructor
 public class UserMembershipBrandRepositoryImpl implements UserMembershipBrandRepositoryCustom {
@@ -98,4 +101,16 @@ public class UserMembershipBrandRepositoryImpl implements UserMembershipBrandRep
 
         return count == null ? 0 : count.intValue();
     }
+
+    @Override
+    public List<StoreBrand> findStoreBrandsByMembershipBrandId(Long membershipBrandId) {
+        return queryFactory
+                .selectFrom(storeBrand)
+                .join(storeBrandMembershipBrand)
+                .on(storeBrandMembershipBrand.storeBrand.eq(storeBrand))
+                .where(storeBrandMembershipBrand.membershipBrand.id.eq(membershipBrandId))
+                .orderBy(storeBrand.id.asc())
+                .fetch();
+    }
+
 }

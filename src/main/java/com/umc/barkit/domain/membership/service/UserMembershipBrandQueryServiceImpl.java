@@ -181,4 +181,52 @@ public class UserMembershipBrandQueryServiceImpl implements UserMembershipBrandQ
                 .build();
     }
 
+        // 3. MembershipBrand 조회
+        MembershipBrand membershipBrand = membershipBrandRepository
+                .findById(userMembershipBrand.getMembershipBrandId())
+                .orElseThrow(() -> new MembershipException(MembershipErrorCode.BRAND4001));
+
+        // 4. 적립/할인 가능한 StoreBrand 목록 조회
+        List<StoreBrand> storeBrands = userMembershipBrandRepository
+                .findStoreBrandsByMembershipBrandId(userMembershipBrand.getMembershipBrandId());
+
+        // 5. DTO 변환 및 반환
+        return userMembershipBrandConverter.toMembershipDetailDTO(
+                userMembershipBrand,
+                membershipBrand,
+                storeBrands
+        );
+    }
+
+    @Override
+    public UserMembershipBrandResponseDTO.MembershipDetailDTO getMembershipDetail(
+            Long userId,
+            Long userMembershipBrandId
+    ) {
+        // 1. UserMembershipBrand 조회
+        UserMembershipBrand userMembershipBrand = userMembershipBrandRepository
+                .findById(userMembershipBrandId)
+                .orElseThrow(() -> new MembershipException(MembershipErrorCode.MEMBERSHIP4004));
+
+        // 2. 본인 소유 확인
+        if (!userMembershipBrand.getUserId().equals(userId)) {
+            throw new MembershipException(MembershipErrorCode.MEMBERSHIP4005);
+        }
+
+        // 3. MembershipBrand 조회
+        MembershipBrand membershipBrand = membershipBrandRepository
+                .findById(userMembershipBrand.getMembershipBrandId())
+                .orElseThrow(() -> new MembershipException(MembershipErrorCode.BRAND4001));
+
+        // 4. 적립/할인 가능한 StoreBrand 목록 조회
+        List<StoreBrand> storeBrands = userMembershipBrandRepository
+                .findStoreBrandsByMembershipBrandId(userMembershipBrand.getMembershipBrandId());
+
+        // 5. DTO 변환 및 반환
+        return userMembershipBrandConverter.toMembershipDetailDTO(
+                userMembershipBrand,
+                membershipBrand,
+                storeBrands
+        );
+    }
 }
