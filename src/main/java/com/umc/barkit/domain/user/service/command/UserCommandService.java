@@ -102,4 +102,22 @@ public class UserCommandService {
         // 비밀번호 업데이트
         user.updatePassword(encodedNewPassword);
     }
+
+    // 알림 설정 변경
+    @Transactional
+    public void updateNotification(Long userId, Boolean enabled) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new UserException(UserErrorCode.NOT_FOUND));
+
+        user.updateNotificationEnabled(enabled);
+    }
+
+    // 위치 권한 동의 상태 변경
+    @Transactional
+    public void updateLocationConsent(Long userId, Boolean consented) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new UserException(UserErrorCode.NOT_FOUND));
+
+        user.updateLocationConsent(consented);
+    }
 }

@@ -17,7 +17,10 @@ public enum UserSuccessCode implements BaseSuccessCode {
 
     PERSONAL_INFO_OK(HttpStatus.OK, "USER2000", "개인정보 조회에 성공했습니다."),
     BIRTH_DATE_UPDATED(HttpStatus.OK, "USER2001", "생년월일 변경에 성공했습니다."),
-    PASSWORD_UPDATED(HttpStatus.OK, "USER2002", "비밀번호 변경에 성공했습니다.");
+    PASSWORD_UPDATED(HttpStatus.OK, "USER2002", "비밀번호 변경에 성공했습니다."),
+
+    NOTIFICATION_UPDATED(HttpStatus.OK, "USER2005", "알림 설정이 변경되었습니다."),
+    LOCATION_CONSENT_UPDATED(HttpStatus.OK, "USER2006", "위치 권한 동의 상태가 변경되었습니다.");
 
 
     private final HttpStatus status;
