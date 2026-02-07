@@ -76,4 +76,10 @@ public class UserRequestDto {
             @NotBlank
             String refreshToken
     ) {}
+
+    // 카카오 로그인
+    public record KakaoLoginRequestDto(
+            @NotBlank String code,
+            @NotBlank String redirectUri
+    ) {}
 }

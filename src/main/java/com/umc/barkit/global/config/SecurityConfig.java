@@ -30,6 +30,8 @@ public class SecurityConfig{
             "/api/auth/signup",
             "/api/auth/check-email",
             "/api/auth/refresh",
+            "/api/auth/oauth/kakao/login",
+            "/oauth/kakao/callback",
             "/api/auth/logout",
             "/swagger-ui/**",
             "/swagger-resources/**",
