@@ -82,4 +82,15 @@ public class UserRequestDto {
             @NotBlank String code,
             @NotBlank String redirectUri
     ) {}
+
+    // 알림 설정 변경
+    public record UpdateNotificationRequestDto(
+            Boolean enabled
+    ) {}
+
+    // 위치 권한 동의 변경
+    public record UpdateLocationConsentRequestDto(
+            Boolean consented
+
+    ) {}
 }

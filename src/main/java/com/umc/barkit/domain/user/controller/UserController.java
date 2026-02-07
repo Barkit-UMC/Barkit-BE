@@ -99,12 +99,58 @@ public class UserController implements UserControllerDocs{
         return ApiResponse.onSuccess(UserSuccessCode.LOGOUT_OK, null);
     }
 
+
     // 카카오 로그인 API
     @PostMapping("/auth/oauth/kakao/login")
     public ApiResponse<UserResponseDto.LoginResponseDto> kakaoLogin(
             @RequestBody @Valid UserRequestDto.KakaoLoginRequestDto request
     ) {
         return ApiResponse.onSuccess(UserSuccessCode.LOGIN_OK, userQueryService.kakaoLogin(request));
+    }
+
+
+    // 알림 설정 변경
+    @PatchMapping("/users/me/notification")
+    public ApiResponse<Void> updateNotification(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @RequestBody @Valid UserRequestDto.UpdateNotificationRequestDto request
+    ) {
+        userCommandService.updateNotification(
+                userDetails.getUserId(),
+                request.enabled()
+        );
+
+        String message = request.enabled()
+                ? "알림이 활성화되었습니다."
+                : "알림이 비활성화되었습니다.";
+
+        return ApiResponse.onSuccess(
+                UserSuccessCode.NOTIFICATION_UPDATED,
+                null,
+                message
+        );
+    }
+
+    // 위치 권한 동의 변경
+    @PatchMapping("/users/me/location-consent")
+    public ApiResponse<Void> updateLocationConsent(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @RequestBody @Valid UserRequestDto.UpdateLocationConsentRequestDto request
+    ) {
+        userCommandService.updateLocationConsent(
+                userDetails.getUserId(),
+                request.consented()
+        );
+
+        String message = request.consented()
+                ? "위치 권한 요청이 허용되었습니다."
+                : "위치 권한 요청이 거부되었습니다.";
+
+        return ApiResponse.onSuccess(
+                UserSuccessCode.LOCATION_CONSENT_UPDATED,
+                null,
+                message
+        );
     }
 
 

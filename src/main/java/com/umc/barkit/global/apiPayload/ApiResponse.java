@@ -44,4 +44,19 @@ public class ApiResponse<T> {
                 result
         );
     }
+
+    // 성공 커스텀 메시지
+    public static <T> ApiResponse<T> onSuccess(
+            BaseSuccessCode successCode,
+            T result,
+            String customMessage
+    ) {
+        return new ApiResponse<>(
+                true,
+                successCode.getCode(),
+                customMessage,
+                result
+        );
+    }
+
 }

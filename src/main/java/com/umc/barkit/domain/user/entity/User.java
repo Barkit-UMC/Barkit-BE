@@ -46,6 +46,14 @@ public class User extends BaseEntity {
     @Column(name = "deleted_at", columnDefinition = "DATETIME(6)")
     private LocalDateTime deletedAt;
 
+    @Builder.Default
+    @Column(name = "notification_enabled", nullable = false)
+    private Boolean notificationEnabled = true;
+
+    @Builder.Default
+    @Column(name = "location_consent", nullable = false)
+    private Boolean locationConsent = false;
+
     public void softDelete() {
         this.deletedAt = LocalDateTime.now();
         this.status = UserStatus.INACTIVE;
@@ -60,4 +68,10 @@ public class User extends BaseEntity {
     public void updatePassword(String encodedPassword) {
         this.passwordHash = encodedPassword;
     }
+
+    // 알림 수신 여부 변경
+    public void updateNotificationEnabled(Boolean enabled) { this.notificationEnabled = enabled; }
+
+    // 알림 수신 여부 변경
+    public void updateLocationConsent(Boolean consented) { this.locationConsent = consented; }
 }

@@ -115,5 +115,35 @@ public interface UserControllerDocs {
     );
 
 
+    @Operation(
+            summary = "알림 수신 설정 변경 API",
+            description = "마이페이지에서 사용자의 알림 수신 여부를 변경합니다.<br>" +
+                    "JWT 인증 방식으로 동작하며, 로그인한 사용자 본인의 설정만 변경할 수 있습니다."
+    )
+    @ApiResponses({
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "알림 설정 변경 성공"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "인증 실패"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "사용자가 존재하지 않음")
+    })
+    ApiResponse<Void> updateNotification(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @Valid @RequestBody UserRequestDto.UpdateNotificationRequestDto request
+    );
+
+    @Operation(
+            summary = "위치 권한 동의 상태 변경 API",
+            description = "마이페이지에서 사용자의 위치 정보 제공 동의 여부를 변경합니다.<br>" +
+                    "해당 설정은 위치 기반 서비스 제공 여부 판단에 사용됩니다.<br>" +
+                    "JWT 인증 방식으로 동작하며, 로그인한 사용자 본인의 설정만 변경할 수 있습니다."
+    )
+    @ApiResponses({
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "위치 권한 동의 상태 변경 성공"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "인증 실패"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "사용자가 존재하지 않음")
+    })
+    ApiResponse<Void> updateLocationConsent(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @Valid @RequestBody UserRequestDto.UpdateLocationConsentRequestDto request
+    );
 
 }

@@ -20,9 +20,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
-
-
-
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/user-membership-brands")
@@ -131,5 +128,62 @@ public class UserMembershipBrandController {
         return ResponseEntity
                 .status(successCode.getStatus())
                 .body(ApiResponse.onSuccess(successCode, null));
+    }
+
+    @Operation(
+            summary = "멤버십 기준 적립/할인 가능 매장 조회",
+            description = "로그인한 사용자가 보유한 특정 멤버십으로 적립/할인 가능한 매장 목록을 조회합니다. " +
+                    "검색어(keyword)를 통해 매장명 검색이 가능하며, cursor 기반 페이징을 지원합니다."
+    )
+    @GetMapping("/{userMembershipBrandId}/stores")
+    public ResponseEntity<ApiResponse<UserMembershipBrandResponseDTO.AvailableStoreListDTO>> getAvailableStores(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @PathVariable Long userMembershipBrandId,
+            @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) Long cursor,
+            @RequestParam(required = false) Integer size
+    ) {
+        if (userDetails == null) {
+            throw new GeneralException(GeneralErrorCode.UNAUTHORIZED);
+        }
+
+        Long userId = userDetails.getUserId();
+
+        UserMembershipBrandResponseDTO.AvailableStoreListDTO result =
+                userMembershipBrandQueryService.getAvailableStores(
+                        userId,
+                        userMembershipBrandId,
+                        keyword,
+                        cursor,
+                        size
+                );
+
+        return ResponseEntity
+                .status(GeneralSuccessCode.OK.getStatus())
+                .body(ApiResponse.onSuccess(GeneralSuccessCode.OK, result));
+    }
+  
+    @Operation(
+            summary = "사용자 보유 특정 멤버십 상세 정보 조회",
+            description = "사용자가 등록한 특정 멤버십의 상세 정보와 적립/할인 가능한 매장 목록을 조회합니다."
+    )
+    @GetMapping("/{userMembershipBrandId}/detail")
+    public ResponseEntity<ApiResponse<UserMembershipBrandResponseDTO.MembershipDetailDTO>> getMembershipDetail(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @PathVariable Long userMembershipBrandId
+    ) {
+        // JWT 인증 체크
+        if (userDetails == null) {
+            throw new GeneralException(GeneralErrorCode.UNAUTHORIZED);
+        }
+
+        Long userId = userDetails.getUserId();
+
+        UserMembershipBrandResponseDTO.MembershipDetailDTO result =
+                userMembershipBrandQueryService.getMembershipDetail(userId, userMembershipBrandId);
+
+        return ResponseEntity
+                .status(GeneralSuccessCode.OK.getStatus())
+                .body(ApiResponse.onSuccess(GeneralSuccessCode.OK, result));
     }
 }
