@@ -17,7 +17,7 @@ import org.springframework.web.bind.annotation.RestController;
  * (테스트 전용) 카카오 로그인 Redirect URI로 들어오는 콜백을 받아,
  * code(인가 코드)를 이용해 실제 로그인 로직을 실행해보기 위한 컨트롤러
  */
-public class OAuthCallbackController {
+public class OAuthCallbackController implements OAuthCallbackControllerDocs{
 
     private final UserQueryService userQueryService;
 

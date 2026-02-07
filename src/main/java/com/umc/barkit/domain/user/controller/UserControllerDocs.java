@@ -146,4 +146,18 @@ public interface UserControllerDocs {
             @Valid @RequestBody UserRequestDto.UpdateLocationConsentRequestDto request
     );
 
+    @Operation(
+            summary = "카카오 로그인 API",
+            description = "프론트에서 카카오 인가 코드(code)와 redirectUri를 전달하면,<br>" +
+                    "백엔드가 카카오 토큰 발급/사용자 정보 조회를 수행한 뒤 서비스 JWT(accessToken/refreshToken)를 발급합니다."
+    )
+    @ApiResponses({
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "로그인 성공, 서비스 JWT(accessToken/refreshToken) 반환"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "요청 값 검증 실패"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "카카오 인증 실패/토큰 발급 실패")
+    })
+    ApiResponse<UserResponseDto.LoginResponseDto> kakaoLogin(
+            @RequestBody @Valid UserRequestDto.KakaoLoginRequestDto request
+    );
+
 }
