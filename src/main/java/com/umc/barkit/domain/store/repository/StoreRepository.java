@@ -1,6 +1,7 @@
 package com.umc.barkit.domain.store.repository;
 
 import com.umc.barkit.domain.store.entity.Store;
+import com.umc.barkit.domain.store.repository.projection.BrandViewCountProjection;
 import com.umc.barkit.domain.store.repository.projection.ViewCountProjection;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -36,4 +37,20 @@ public interface StoreRepository extends JpaRepository<Store,Long> {
             Pageable pageable
     );
 
+    // 멤버십 기준 인기 매장 조회
+    @Query("""
+    select
+        sb.id as storeBrandId,
+        sb.name as storeBrandName,
+        sum(s.viewCount) as totalViewCount
+    from Store s
+    join s.brand sb
+    where sb.id in :brandIds
+    group by sb.id, sb.name
+    order by sum(s.viewCount) desc
+""")
+    List<BrandViewCountProjection> findPopularBrandsByBrandIds(
+            @Param("brandIds") List<Long> brandIds,
+            Pageable pageable
+    );
 }
