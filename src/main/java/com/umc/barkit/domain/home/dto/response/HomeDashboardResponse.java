@@ -9,12 +9,12 @@ import java.util.List;
 
 /**
  * 홈 대시보드 전용 응답 DTO
- * - 홈 화면 전용
- * - 멤버십 카드 리스트 제공
- * - 매장 즐겨찾기 기능 제거됨 (기획 변경)
  */
 public class HomeDashboardResponse {
 
+    /**
+     * 홈 대시보드 응답
+     */
     @Getter
     @Builder
     @NoArgsConstructor
@@ -22,36 +22,48 @@ public class HomeDashboardResponse {
     public static class DashboardDTO {
 
         /**
-         * 사용자 보유 멤버십 카드 요약
+         * 대표 멤버십 카드 (isMain = true)
+         */
+        private List<MainMembershipDTO> mainMemberships;
+
+        /**
+         * 전체 멤버십 카드 (대표 멤버십 포함)
          */
         private List<MembershipSummaryDTO> memberships;
     }
 
+    /**
+     * 대표 멤버십 DTO (바코드 렌더링용 membershipNumber 포함)
+     */
+    @Getter
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class MainMembershipDTO {
+
+        private Long userMembershipBrandId;
+        private Long membershipBrandId;
+        private String name;
+        private String logoUrl;
+
+        /**
+         * 바코드 raw value (= membershipNumber)
+         */
+        private String membershipNumber;
+    }
+
+    /**
+     * 일반 멤버십 DTO (바코드 없음)
+     */
     @Getter
     @Builder
     @NoArgsConstructor
     @AllArgsConstructor
     public static class MembershipSummaryDTO {
 
-        /**
-         * 유저 멤버십 ID
-         * - 대표 멤버십 설정 / 상세 조회 등에 사용
-         */
-        private Long userMembershipBrandId; // 추가됨
-
-        /**
-         * 멤버십 브랜드 ID
-         */
+        private Long userMembershipBrandId;
         private Long membershipBrandId;
-
-        /**
-         * 멤버십 브랜드 이름
-         */
         private String name;
-
-        /**
-         * 멤버십 브랜드 로고 URL
-         */
         private String logoUrl;
     }
 }
