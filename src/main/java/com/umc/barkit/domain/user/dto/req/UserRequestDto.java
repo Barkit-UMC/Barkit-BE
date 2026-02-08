@@ -77,6 +77,12 @@ public class UserRequestDto {
             String refreshToken
     ) {}
 
+    // 카카오 로그인
+    public record KakaoLoginRequestDto(
+            @NotBlank String code,
+            @NotBlank String redirectUri
+    ) {}
+
     // 알림 설정 변경
     public record UpdateNotificationRequestDto(
             Boolean enabled
@@ -85,5 +91,6 @@ public class UserRequestDto {
     // 위치 권한 동의 변경
     public record UpdateLocationConsentRequestDto(
             Boolean consented
+
     ) {}
 }

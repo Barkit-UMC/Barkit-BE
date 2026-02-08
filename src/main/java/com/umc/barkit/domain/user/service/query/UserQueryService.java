@@ -5,9 +5,15 @@ import com.umc.barkit.domain.user.dto.req.UserRequestDto;
 import com.umc.barkit.domain.user.dto.res.UserResponseDto;
 import com.umc.barkit.domain.user.dto.res.UserResponseDto.EmailCheckResponseDto;
 import com.umc.barkit.domain.user.entity.User;
+import com.umc.barkit.domain.user.entity.UserOauth;
 import com.umc.barkit.domain.user.entity.UserSession;
+import com.umc.barkit.domain.user.enums.AuthProvider;
+import com.umc.barkit.domain.user.enums.Role;
 import com.umc.barkit.domain.user.exception.UserException;
 import com.umc.barkit.domain.user.exception.code.UserErrorCode;
+import com.umc.barkit.domain.user.oauth.client.KakaoApiClient;
+import com.umc.barkit.domain.user.oauth.config.KakaoOAuthProperties;
+import com.umc.barkit.domain.user.repository.UserOauthRepository;
 import com.umc.barkit.domain.user.repository.UserRepository;
 import com.umc.barkit.domain.user.repository.UserSessionRepository;
 import com.umc.barkit.global.auth.details.CustomUserDetails;
@@ -27,6 +33,9 @@ public class UserQueryService {
     private final UserSessionRepository userSessionRepository;
     private final JwtUtil jwtUtil;
     private final PasswordEncoder passwordEncoder;
+    private final KakaoApiClient kakaoApiClient;
+    private final KakaoOAuthProperties kakaoOAuthProperties;
+    private final UserOauthRepository userOauthRepository;
 
     // 아이디 중복 확인
     public UserResponseDto.EmailCheckResponseDto checkEmailAvailability(String email) {
@@ -162,5 +171,86 @@ public class UserQueryService {
                 .orElseThrow(() -> new UserException(UserErrorCode.REFRESH_TOKEN_INVALID));
 
         session.revoke();
+    }
+
+
+    // 카카오 로그인
+    @Transactional
+    public UserResponseDto.LoginResponseDto kakaoLogin(UserRequestDto.KakaoLoginRequestDto dto) {
+        // redirectUri 검증
+        if (kakaoOAuthProperties.redirectUriAllowlist() == null
+                || !kakaoOAuthProperties.redirectUriAllowlist().contains(dto.redirectUri())) {
+            throw new UserException(UserErrorCode.INVALID_REDIRECT_URI);
+        }
+
+        // 인가코드(code)로 카카오 토큰 발급 요청
+        var token = kakaoApiClient.exchangeToken(dto.code(), dto.redirectUri());
+        // 카카오 access_token으로 유저 정보 조회
+        var userInfo = kakaoApiClient.getUserInfo(token.accessToken());
+
+        String providerUid = String.valueOf(userInfo.id()); // 카카오 유저 고유 id(
+        String email = userInfo.kakaoAccount() != null ? userInfo.kakaoAccount().email() : null;
+        String nickname = userInfo.properties() != null ? userInfo.properties().nickname() : null;
+
+        if (email == null || email.isBlank()) {
+            throw new UserException(UserErrorCode.OAUTH_EMAIL_REQUIRED);
+        }
+
+        // (provider, providerUid)로 이미 연결된 유저가 있는지 먼저 확인
+        //  - 있으면 해당 유저로 로그인 처리
+        //  - 없으면 user 생성/조회 후 oauth 연결 저장
+        User user = userOauthRepository
+                .findByProviderAndProviderUidAndDisconnectedAtIsNull(AuthProvider.KAKAO, providerUid)
+                .map(UserOauth::getUser)
+                .orElseGet(() -> upsertUserAndConnectOauth(email, nickname, providerUid));
+
+        // JWT 발급
+        return issueTokens(user);
+    }
+
+    private User upsertUserAndConnectOauth(String email, String nickname, String providerUid) {
+        // 이메일 기반으로 우리 서비스 유저가 이미 있으면 재사용
+        User user = userRepository.findByEmail(email).orElseGet(() -> createSocialUser(email, nickname));
+
+        // user_oauth에 (KAKAO, providerUid) 연결 정보 저장
+        UserOauth oauth = UserOauth.builder()
+                .user(user)
+                .provider(AuthProvider.KAKAO)
+                .providerUid(providerUid)
+                .providerEmail(email)
+                .connectedAt(LocalDateTime.now())
+                .build();
+
+        userOauthRepository.save(oauth);
+        return user;
+    }
+
+    private User createSocialUser(String email, String nickname) {
+        // name에 들어갈 표시 이름 결정 -  nickname을 name으로
+        String displayName = (nickname != null && !nickname.isBlank()) ? nickname : email.split("@")[0];
+        // 랜덤 비번 값
+        String randomPw = java.util.UUID.randomUUID().toString();
+        String encoded = passwordEncoder.encode(randomPw);
+
+        User user = UserConverter.toSocialUser(
+                email,
+                displayName,
+                encoded,
+                Role.ROLE_USER
+        );
+
+        return userRepository.save(user);
+    }
+
+    private UserResponseDto.LoginResponseDto issueTokens(User user) {
+        CustomUserDetails userDetails = new CustomUserDetails(user);
+
+        // access/refresh 발급
+        String accessToken = jwtUtil.createAccessToken(userDetails);
+        String refreshToken = jwtUtil.createRefreshToken(userDetails);
+        saveRefreshToken(user, refreshToken);
+
+        // // 기존 로그인 응답 포맷
+        return UserConverter.toLoginDTO(user, accessToken, refreshToken);
     }
 }

@@ -37,6 +37,8 @@ public class SecurityConfig{
             "/api/terms",
             "/api/auth/check-email",
             "/api/auth/refresh",
+            "/api/auth/oauth/kakao/login",
+            "/oauth/kakao/callback",
             "/api/auth/logout",
             "/swagger-ui/**",
             "/swagger-resources/**",

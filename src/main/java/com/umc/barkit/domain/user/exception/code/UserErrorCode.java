@@ -18,6 +18,10 @@ public enum UserErrorCode implements BaseErrorCode {
     REFRESH_TOKEN_INVALID(HttpStatus.UNAUTHORIZED, "AUTH4004", "리프레시 토큰이 유효하지 않습니다."),
     REFRESH_TOKEN_EXPIRED(HttpStatus.UNAUTHORIZED, "AUTH4005", "리프레시 토큰이 만료되었습니다."),
 
+    // 소셜 로그인
+    INVALID_REDIRECT_URI(HttpStatus.BAD_REQUEST, "AUTH4007", "허용되지 않은 Redirect URI입니다."),
+    OAUTH_EMAIL_REQUIRED(HttpStatus.BAD_REQUEST, "AUTH4008", "카카오 계정 이메일 제공에 동의가 필요합니다."),
+
     // 비밀번호
     INVALID_PASSWORD(HttpStatus.BAD_REQUEST, "USER4001", "비밀번호는 8~12자, 영문+특수문자 조합이어야 합니다."),
     PASSWORD_MISMATCH(HttpStatus.BAD_REQUEST, "USER4002", "비밀번호 확인이 일치하지 않습니다."),

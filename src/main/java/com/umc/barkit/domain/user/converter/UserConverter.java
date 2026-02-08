@@ -69,4 +69,22 @@ public class UserConverter {
                 user.getBirthDate()
         );
     }
+
+    public static User toSocialUser(
+            String email,
+            String displayName,
+            String passwordHash,
+            Role role
+    ) {
+        return User.builder()
+                .name(displayName)
+                .email(email)
+                .passwordHash(passwordHash)
+                .role(role)
+                .phoneNumber(null)
+                .birthDate(null)
+                .status(UserStatus.ACTIVE)
+                .deletedAt(null)
+                .build();
+    }
 }

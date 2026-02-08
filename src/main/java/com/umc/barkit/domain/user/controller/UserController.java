@@ -99,6 +99,16 @@ public class UserController implements UserControllerDocs{
         return ApiResponse.onSuccess(UserSuccessCode.LOGOUT_OK, null);
     }
 
+
+    // 카카오 로그인 API
+    @PostMapping("/auth/oauth/kakao/login")
+    public ApiResponse<UserResponseDto.LoginResponseDto> kakaoLogin(
+            @RequestBody @Valid UserRequestDto.KakaoLoginRequestDto request
+    ) {
+        return ApiResponse.onSuccess(UserSuccessCode.LOGIN_OK, userQueryService.kakaoLogin(request));
+    }
+
+
     // 알림 설정 변경
     @PatchMapping("/users/me/notification")
     public ApiResponse<Void> updateNotification(
@@ -142,5 +152,6 @@ public class UserController implements UserControllerDocs{
                 message
         );
     }
+
 
 }
