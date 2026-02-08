@@ -5,7 +5,10 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
-@EnableConfigurationProperties(KakaoOAuthProperties.class)
+@EnableConfigurationProperties({
+        KakaoOAuthProperties.class,
+        NaverOauthProperties.class
+})
 // KakaoOAuthProperties를 스프링 빈으로 등록
 public class PropertiesConfig {
 }

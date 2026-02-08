@@ -22,6 +22,11 @@ public enum UserErrorCode implements BaseErrorCode {
     INVALID_REDIRECT_URI(HttpStatus.BAD_REQUEST, "AUTH4007", "허용되지 않은 Redirect URI입니다."),
     OAUTH_EMAIL_REQUIRED(HttpStatus.BAD_REQUEST, "AUTH4008", "카카오 계정 이메일 제공에 동의가 필요합니다."),
 
+    // 네이버 소셜 로그인
+    OAUTH_STATE_INVALID(HttpStatus.BAD_REQUEST, "AUTH4010", "유효하지 않은 state 입니다."),
+    OAUTH_STATE_EXPIRED(HttpStatus.BAD_REQUEST, "AUTH4011", "state가 만료되었습니다."),
+    OAUTH_PROVIDER_UID_REQUIRED(HttpStatus.BAD_REQUEST, "AUTH4012", "소셜 로그인 식별자가 누락되었습니다."),
+
     // 비밀번호
     INVALID_PASSWORD(HttpStatus.BAD_REQUEST, "USER4001", "비밀번호는 8~12자, 영문+특수문자 조합이어야 합니다."),
     PASSWORD_MISMATCH(HttpStatus.BAD_REQUEST, "USER4002", "비밀번호 확인이 일치하지 않습니다."),

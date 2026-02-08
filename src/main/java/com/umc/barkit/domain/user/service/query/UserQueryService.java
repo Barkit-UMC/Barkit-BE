@@ -12,12 +12,15 @@ import com.umc.barkit.domain.user.enums.Role;
 import com.umc.barkit.domain.user.exception.UserException;
 import com.umc.barkit.domain.user.exception.code.UserErrorCode;
 import com.umc.barkit.domain.user.oauth.client.KakaoApiClient;
+import com.umc.barkit.domain.user.oauth.client.NaverApiClient;
 import com.umc.barkit.domain.user.oauth.config.KakaoOAuthProperties;
+import com.umc.barkit.domain.user.oauth.config.NaverOauthProperties;
 import com.umc.barkit.domain.user.repository.UserOauthRepository;
 import com.umc.barkit.domain.user.repository.UserRepository;
 import com.umc.barkit.domain.user.repository.UserSessionRepository;
 import com.umc.barkit.global.auth.details.CustomUserDetails;
 import com.umc.barkit.global.auth.jwt.JwtUtil;
+import com.umc.barkit.global.auth.oauth.*;
 import jakarta.validation.Valid;
 import java.time.LocalDateTime;
 import lombok.RequiredArgsConstructor;
@@ -36,6 +39,10 @@ public class UserQueryService {
     private final KakaoApiClient kakaoApiClient;
     private final KakaoOAuthProperties kakaoOAuthProperties;
     private final UserOauthRepository userOauthRepository;
+    private final NaverApiClient naverApiClient;
+    private final NaverOauthProperties naverOauthProperties;
+    private final OAuthStateUtil oAuthStateUtil;
+
 
     // 아이디 중복 확인
     public UserResponseDto.EmailCheckResponseDto checkEmailAvailability(String email) {
@@ -202,20 +209,20 @@ public class UserQueryService {
         User user = userOauthRepository
                 .findByProviderAndProviderUidAndDisconnectedAtIsNull(AuthProvider.KAKAO, providerUid)
                 .map(UserOauth::getUser)
-                .orElseGet(() -> upsertUserAndConnectOauth(email, nickname, providerUid));
+                .orElseGet(() -> upsertUserAndConnectOauth(AuthProvider.KAKAO, email, nickname, providerUid));
 
         // JWT 발급
         return issueTokens(user);
     }
 
-    private User upsertUserAndConnectOauth(String email, String nickname, String providerUid) {
+    private User upsertUserAndConnectOauth(AuthProvider provider, String email, String nickname, String providerUid) {
         // 이메일 기반으로 우리 서비스 유저가 이미 있으면 재사용
         User user = userRepository.findByEmail(email).orElseGet(() -> createSocialUser(email, nickname));
 
         // user_oauth에 (KAKAO, providerUid) 연결 정보 저장
         UserOauth oauth = UserOauth.builder()
                 .user(user)
-                .provider(AuthProvider.KAKAO)
+                .provider(provider)
                 .providerUid(providerUid)
                 .providerEmail(email)
                 .connectedAt(LocalDateTime.now())
@@ -252,5 +259,58 @@ public class UserQueryService {
 
         // // 기존 로그인 응답 포맷
         return UserConverter.toLoginDTO(user, accessToken, refreshToken);
+    }
+
+    // 네이버 authorize URL 생성 메서드
+    public String getNaverAuthorizeUrl(String redirectUri) {
+        // redirectUri allowlist 검증
+        if (naverOauthProperties.redirectUriAllowlist() == null
+                || !naverOauthProperties.redirectUriAllowlist().contains(redirectUri)) {
+            throw new UserException(UserErrorCode.INVALID_REDIRECT_URI);
+        }
+
+        // state 생성
+        String state = oAuthStateUtil.generate(naverOauthProperties.stateSecret());
+        return naverApiClient.buildAuthorizeUrl(redirectUri, state);
+    }
+
+    // 네이버 로그인
+    @Transactional
+    public UserResponseDto.LoginResponseDto naverLogin(UserRequestDto.NaverLoginRequestDto dto) {
+        if (naverOauthProperties.redirectUriAllowlist() == null
+                || !naverOauthProperties.redirectUriAllowlist().contains(dto.redirectUri())) {
+            throw new UserException(UserErrorCode.INVALID_REDIRECT_URI);
+        }
+
+        try {
+            oAuthStateUtil.verify(naverOauthProperties.stateSecret(), dto.state());
+        } catch (IllegalArgumentException e) {
+            if ("STATE_EXPIRED".equals(e.getMessage())) {
+                throw new UserException(UserErrorCode.OAUTH_STATE_EXPIRED);
+            }
+            throw new UserException(UserErrorCode.OAUTH_STATE_INVALID);
+        }
+
+        var token = naverApiClient.exchangeToken(dto.code(), dto.state(), dto.redirectUri());
+        var userInfo = naverApiClient.getUserInfo(token.accessToken());
+
+        String providerUid = userInfo.response() != null ? userInfo.response().id() : null;
+        String email = userInfo.response() != null ? userInfo.response().email() : null;
+        String name = userInfo.response() != null ? userInfo.response().name() : null;
+
+        if (providerUid == null || providerUid.isBlank()) {
+            throw new UserException(UserErrorCode.OAUTH_PROVIDER_UID_REQUIRED);
+        }
+
+        if (email == null || email.isBlank()) {
+            throw new UserException(UserErrorCode.OAUTH_EMAIL_REQUIRED);
+        }
+
+        User user = userOauthRepository
+                .findByProviderAndProviderUidAndDisconnectedAtIsNull(AuthProvider.NAVER, providerUid)
+                .map(UserOauth::getUser)
+                .orElseGet(() -> upsertUserAndConnectOauth(AuthProvider.NAVER, email, name, providerUid));
+
+        return issueTokens(user);
     }
 }

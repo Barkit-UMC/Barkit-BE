@@ -83,6 +83,14 @@ public class UserRequestDto {
             @NotBlank String redirectUri
     ) {}
 
+    // 네이버 로그인
+    public record NaverLoginRequestDto(
+            @NotBlank String code,
+            @NotBlank String state,
+            @NotBlank String redirectUri
+    ) {
+    }
+
     // 알림 설정 변경
     public record UpdateNotificationRequestDto(
             Boolean enabled

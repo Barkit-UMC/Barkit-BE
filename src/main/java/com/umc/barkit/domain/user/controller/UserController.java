@@ -108,6 +108,14 @@ public class UserController implements UserControllerDocs{
         return ApiResponse.onSuccess(UserSuccessCode.LOGIN_OK, userQueryService.kakaoLogin(request));
     }
 
+    // 네이버 로그인 API
+    @PostMapping("/auth/oauth/naver/login")
+    public ApiResponse<UserResponseDto.LoginResponseDto> naverLogin(
+            @RequestBody @Valid UserRequestDto.NaverLoginRequestDto request
+    ) {
+        return ApiResponse.onSuccess(UserSuccessCode.LOGIN_OK, userQueryService.naverLogin(request));
+    }
+
 
     // 알림 설정 변경
     @PatchMapping("/users/me/notification")
