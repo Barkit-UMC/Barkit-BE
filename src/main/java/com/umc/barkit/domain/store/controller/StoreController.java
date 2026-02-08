@@ -10,6 +10,8 @@ import com.umc.barkit.domain.store.exception.code.StoreErrorCode;
 import com.umc.barkit.domain.store.exception.code.StoreSuccessCode;
 import com.umc.barkit.domain.store.service.query.StoreQueryService;
 import com.umc.barkit.global.apiPayload.ApiResponse;
+import com.umc.barkit.global.apiPayload.code.GeneralErrorCode;
+import com.umc.barkit.global.apiPayload.exception.GeneralException;
 import com.umc.barkit.global.auth.details.CustomUserDetails;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -27,6 +29,7 @@ public class StoreController implements StoreControllerDocs{
 
     @Override
     public ApiResponse<StoreResDTO.SearchedStoreSlice> search(
+            CustomUserDetails userDetails,
             StoreReqDTO.SearchReq req,
             DistanceType distanceType,
             Category category,
@@ -35,6 +38,11 @@ public class StoreController implements StoreControllerDocs{
             int size
     ) {
         LocalDateTime startTime = LocalDateTime.now();
+
+        if (userDetails == null) {
+            throw new GeneralException(GeneralErrorCode.UNAUTHORIZED);
+        }
+
         if (distanceType == DistanceType.CENTER && (req.centerLat() == null || req.centerLng() == null)) {
             throw new StoreException(StoreErrorCode.CENTER_LOCATION_REQUIRED);
         }

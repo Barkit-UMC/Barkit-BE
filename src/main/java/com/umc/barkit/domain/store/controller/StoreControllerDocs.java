@@ -37,6 +37,7 @@ public interface StoreControllerDocs {
     })
     @GetMapping("/search")
     ApiResponse<StoreResDTO.SearchedStoreSlice> search(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
             @Valid @ModelAttribute StoreReqDTO.SearchReq req,
             @RequestParam(value = "distanceType", defaultValue = "CURRENT") DistanceType distanceType,
             @RequestParam(value = "category", defaultValue = "ALL") Category category,
