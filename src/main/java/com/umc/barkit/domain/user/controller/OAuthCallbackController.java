@@ -42,9 +42,10 @@ public class OAuthCallbackController implements OAuthCallbackControllerDocs{
         return ApiResponse.onSuccess(UserSuccessCode.LOGIN_OK, userQueryService.naverLogin(dto));
     }
 
+    // 네이버 authorize URL 생성 API (백엔드 로컬 테스트용)
     @GetMapping("/oauth/naver/authorize-url")
     public ApiResponse<String> naverAuthorizeUrl() {
         String url = userQueryService.getNaverAuthorizeUrl("http://localhost:8080/oauth/naver/callback");
-        return ApiResponse.onSuccess(UserSuccessCode.LOGIN_OK, url);
+        return ApiResponse.onSuccess(UserSuccessCode.OAUTH_AUTHORIZE_URL_OK, url);
     }
 }

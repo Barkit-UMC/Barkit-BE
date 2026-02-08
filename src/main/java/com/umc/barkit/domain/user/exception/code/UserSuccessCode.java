@@ -14,6 +14,7 @@ public enum UserSuccessCode implements BaseSuccessCode {
     LOGIN_OK(HttpStatus.OK, "AUTH2002", "로그인에 성공했습니다."),
     TOKEN_REFRESH_OK(HttpStatus.OK, "AUTH2003", "액세스 토큰 재발급에 성공했습니다."),
     LOGOUT_OK(HttpStatus.OK, "AUTH2004", "로그아웃에 성공했습니다."),
+    OAUTH_AUTHORIZE_URL_OK(HttpStatus.OK, "AUTH2005", "네이버 OAuth 인가 URL 생성에 성공했습니다."),
 
     PERSONAL_INFO_OK(HttpStatus.OK, "USER2000", "개인정보 조회에 성공했습니다."),
     BIRTH_DATE_UPDATED(HttpStatus.OK, "USER2001", "생년월일 변경에 성공했습니다."),
