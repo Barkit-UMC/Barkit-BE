@@ -30,6 +30,12 @@ public class UserRequestDto {
             String password,
             @NotBlank
             String confirmPassword,
+            @NotNull
+            @PastOrPresent
+            @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd")
+            @Schema(example = "2002-01-01")
+            LocalDate birthDate,
+
             @NotEmpty
             @Valid
             List<TermAgreement> terms
