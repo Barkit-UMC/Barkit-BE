@@ -11,6 +11,7 @@ import com.umc.barkit.global.auth.details.CustomUserDetails;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -169,5 +170,12 @@ public class UserController implements UserControllerDocs{
         );
     }
 
+    // 회원 탈퇴
+    @DeleteMapping("/users/me")
+    public ApiResponse<UserResponseDto.WithdrawResponseDto> withdraw(
+            @AuthenticationPrincipal CustomUserDetails userDetails
+    ) {
+        return ApiResponse.onSuccess(UserSuccessCode.WITHDRAW_OK, userCommandService.withdraw(userDetails.getUserId()));
+    }
 
 }

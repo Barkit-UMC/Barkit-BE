@@ -1,6 +1,7 @@
 package com.umc.barkit.global.auth.details;
 
 import com.umc.barkit.domain.user.entity.User;
+import com.umc.barkit.domain.user.enums.UserStatus;
 import com.umc.barkit.domain.user.exception.UserException;
 import com.umc.barkit.domain.user.exception.code.UserErrorCode;
 import com.umc.barkit.domain.user.repository.UserRepository;
@@ -22,7 +23,7 @@ public class CustomUserDetailsService implements UserDetailsService {
             String username
     ) throws UsernameNotFoundException {
         // 검증할 Member 조회
-        User user = userRepository.findByEmail(username)
+        User user = userRepository.findByEmailAndStatus(username, UserStatus.ACTIVE)
                 .orElseThrow(() -> new UserException(UserErrorCode.NOT_FOUND));
         // CustomUserDetails 반환
         return new CustomUserDetails(user);

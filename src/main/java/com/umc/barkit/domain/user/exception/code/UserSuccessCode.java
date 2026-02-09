@@ -21,8 +21,9 @@ public enum UserSuccessCode implements BaseSuccessCode {
     PASSWORD_UPDATED(HttpStatus.OK, "USER2002", "비밀번호 변경에 성공했습니다."),
 
     NOTIFICATION_UPDATED(HttpStatus.OK, "USER2005", "알림 설정이 변경되었습니다."),
-    LOCATION_CONSENT_UPDATED(HttpStatus.OK, "USER2006", "위치 권한 동의 상태가 변경되었습니다.");
+    LOCATION_CONSENT_UPDATED(HttpStatus.OK, "USER2006", "위치 권한 동의 상태가 변경되었습니다."),
 
+    WITHDRAW_OK(HttpStatus.OK, "USER2007", "회원탈퇴가 완료되었습니다.");
 
     private final HttpStatus status;
     private final String code;

@@ -43,14 +43,19 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             // 토큰에서 이메일 추출
             String email = jwtUtil.getEmail(token);
             // 인증 객체 생성: 이메일로 찾아온 뒤, 인증 객체 생성
-            UserDetails user = customUserDetailsService.loadUserByUsername(email);
-            Authentication auth = new UsernamePasswordAuthenticationToken(
-                    user,
-                    null,
-                    user.getAuthorities()
-            );
-            // 인증 완료 후 SecurityContextHolder에 넣기
-            SecurityContextHolder.getContext().setAuthentication(auth);
+
+            try{
+                UserDetails user = customUserDetailsService.loadUserByUsername(email);
+                Authentication auth = new UsernamePasswordAuthenticationToken(
+                        user,
+                        null,
+                        user.getAuthorities()
+                );
+                // 인증 완료 후 SecurityContextHolder에 넣기
+                SecurityContextHolder.getContext().setAuthentication(auth);
+            }catch(RuntimeException e){
+                SecurityContextHolder.clearContext();
+            }
         }
         filterChain.doFilter(request, response);
 

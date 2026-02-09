@@ -1,6 +1,7 @@
 package com.umc.barkit.domain.user.dto.res;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import lombok.Builder;
 
 public class UserResponseDto {
@@ -37,5 +38,11 @@ public class UserResponseDto {
             String email,
             String phoneNumber,
             LocalDate birthDate
+    ) {}
+
+    // 회원 탈퇴
+    public record WithdrawResponseDto(
+            Long userId,
+            LocalDateTime deletedAt
     ) {}
 }

@@ -9,6 +9,7 @@ import com.umc.barkit.domain.user.entity.UserOauth;
 import com.umc.barkit.domain.user.entity.UserSession;
 import com.umc.barkit.domain.user.enums.AuthProvider;
 import com.umc.barkit.domain.user.enums.Role;
+import com.umc.barkit.domain.user.enums.UserStatus;
 import com.umc.barkit.domain.user.exception.UserException;
 import com.umc.barkit.domain.user.exception.code.UserErrorCode;
 import com.umc.barkit.domain.user.oauth.client.KakaoApiClient;
@@ -46,7 +47,7 @@ public class UserQueryService {
 
     // 아이디 중복 확인
     public UserResponseDto.EmailCheckResponseDto checkEmailAvailability(String email) {
-        boolean isAvailable = !userRepository.existsByEmail(email); // DB에서 해당 이메일이 존재하면 false 반환
+        boolean isAvailable = !userRepository.existsByEmailAndStatus(email, UserStatus.ACTIVE); // DB에서 해당 이메일이 존재하면 false 반환
         String message = isAvailable ? "사용 가능한 아이디입니다" : "사용 불가능한 아이디입니다";
         return new EmailCheckResponseDto(isAvailable, message);
     }
@@ -58,7 +59,7 @@ public class UserQueryService {
     ) {
 
         // User 조회
-        User user = userRepository.findByEmail(dto.email())
+        User user = userRepository.findByEmailAndStatus(dto.email(), UserStatus.ACTIVE)
                 .orElseThrow(() -> new UserException(UserErrorCode.NOT_FOUND));
 
         // 비밀번호 검증
@@ -119,7 +120,7 @@ public class UserQueryService {
         }
 
         // 이메일로 User 조회
-        User user = userRepository.findByEmail(email)
+        User user = userRepository.findByEmailAndStatus(email, UserStatus.ACTIVE)
                 .orElseThrow(() -> new UserException(UserErrorCode.NOT_FOUND));
 
         // 리프레쉬 토큰 해시화
@@ -143,12 +144,8 @@ public class UserQueryService {
 
     // 개인정보 조회
     public UserResponseDto.PersonalInfoResponseDto getPersonalInfo(Long userId) {
-        User user = userRepository.findById(userId)
+        User user = userRepository.findByIdAndStatus(userId, UserStatus.ACTIVE)
                 .orElseThrow(() -> new UserException(UserErrorCode.NOT_FOUND));
-
-        if (user.getDeletedAt() != null) {
-            throw new UserException(UserErrorCode.NOT_FOUND);
-        }
 
         return UserConverter.toPersonalInfoDto(user);
     }
@@ -169,7 +166,7 @@ public class UserQueryService {
             throw new UserException(UserErrorCode.REFRESH_TOKEN_INVALID);
         }
 
-        User user = userRepository.findByEmail(email)
+        User user = userRepository.findByEmailAndStatus(email, UserStatus.ACTIVE)
                 .orElseThrow(() -> new UserException(UserErrorCode.NOT_FOUND));
 
         String refreshTokenHash = jwtUtil.hashToken(refreshToken);
@@ -209,6 +206,7 @@ public class UserQueryService {
         User user = userOauthRepository
                 .findByProviderAndProviderUidAndDisconnectedAtIsNull(AuthProvider.KAKAO, providerUid)
                 .map(UserOauth::getUser)
+                .filter(u -> u.getStatus() == UserStatus.ACTIVE)
                 .orElseGet(() -> upsertUserAndConnectOauth(AuthProvider.KAKAO, email, nickname, providerUid));
 
         // JWT 발급
@@ -217,7 +215,8 @@ public class UserQueryService {
 
     private User upsertUserAndConnectOauth(AuthProvider provider, String email, String nickname, String providerUid) {
         // 이메일 기반으로 우리 서비스 유저가 이미 있으면 재사용
-        User user = userRepository.findByEmail(email).orElseGet(() -> createSocialUser(email, nickname));
+        User user = userRepository.findByEmailAndStatus(email, UserStatus.ACTIVE)
+                .orElseGet(() -> createSocialUser(email, nickname));
 
         // user_oauth에 (KAKAO, providerUid) 연결 정보 저장
         UserOauth oauth = UserOauth.builder()
@@ -309,6 +308,7 @@ public class UserQueryService {
         User user = userOauthRepository
                 .findByProviderAndProviderUidAndDisconnectedAtIsNull(AuthProvider.NAVER, providerUid)
                 .map(UserOauth::getUser)
+                .filter(u -> u.getStatus() == UserStatus.ACTIVE)
                 .orElseGet(() -> upsertUserAndConnectOauth(AuthProvider.NAVER, email, name, providerUid));
 
         return issueTokens(user);
