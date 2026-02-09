@@ -1,5 +1,6 @@
 package com.umc.barkit.global.config;
 
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -15,6 +16,7 @@ import java.util.Map;
 
 @Configuration
 @EnableCaching
+@ConditionalOnProperty(name = "spring.data.redis.enabled", havingValue = "true")
 public class RedisCacheConfig {
 
     @Bean
