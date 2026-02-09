@@ -25,12 +25,12 @@ public class HomePopularStoreServiceImpl implements HomePopularStoreService {
     private final StoreRepository storeRepository;
 
     @Override
-    public HomePopularStoreResponse getPopularStores(Long userMembershipBrandId) {
+    public HomePopularStoreResponse getPopularStores(Long membershipBrandId) {
 
         // 1️. 멤버십 → StoreBrand IDs
         List<Long> storeBrandIds =
                 storeBrandMembershipBrandRepository
-                        .findStoreBrandIdsByMembershipBrandId(userMembershipBrandId);
+                        .findStoreBrandIdsByMembershipBrandId(membershipBrandId);
 
         //  유효하지 않은 멤버십
         if (storeBrandIds.isEmpty()) {

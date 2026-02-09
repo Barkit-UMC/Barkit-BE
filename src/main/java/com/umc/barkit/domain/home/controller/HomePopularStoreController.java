@@ -17,17 +17,17 @@ public class HomePopularStoreController {
 
     @Operation(
             summary = "홈 인기 매장 미리보기 조회",
-            description = "사용자가 보유한 특정 멤버십 기준으로 적립/할인 가능한 매장 중 " +
-                    "조회수(viewCount)가 높은 상위 매장들을 미리보기 형태로 제공합니다. " +
-                    "해당 API는 홈 화면 노출용이며, 최대 5개의 인기 매장을 반환합니다."
+            description = "특정 멤버십(MembershipBrand) 기준으로 적립/할인 가능한 매장 브랜드 중 " +
+                    "조회수(viewCount)가 높은 상위 브랜드를 미리보기 형태로 제공합니다. " +
+                    "지점(Store) 단위가 아닌 브랜드(StoreBrand) 단위로 집계하며, 최대 5개를 반환합니다."
     )
-    @GetMapping("/memberships/{userMembershipBrandId}/popular-stores")
+    @GetMapping("/memberships/{membershipBrandId}/popular-stores")
     public ApiResponse<HomePopularStoreResponse> getPopularStores(
-            @PathVariable Long userMembershipBrandId
+            @PathVariable Long membershipBrandId
     ) {
         return ApiResponse.onSuccess(
                 HomeSuccessCode.HOME_POPULAR_STORE_PREVIEW_SUCCESS,
-                homePopularStoreService.getPopularStores(userMembershipBrandId)
+                homePopularStoreService.getPopularStores(membershipBrandId)
         );
     }
 }
