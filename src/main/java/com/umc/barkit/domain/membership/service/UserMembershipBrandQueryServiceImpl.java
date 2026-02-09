@@ -138,7 +138,7 @@ public class UserMembershipBrandQueryServiceImpl implements UserMembershipBrandQ
                     .build();
         }
 
-        // 4. StoreBrand 조회 (지점 존재하는 브랜드만)
+        // 4. StoreBrand 조회 (store 테이블 의존 제거)
         List<StoreBrand> brands =
                 storeBrandRepository.findAvailableStoreBrands(
                         storeBrandIds,
@@ -157,21 +157,16 @@ public class UserMembershipBrandQueryServiceImpl implements UserMembershipBrandQ
                 ? resultBrands.get(resultBrands.size() - 1).getId()
                 : null;
 
-        // 5. DTO 변환 (대표 store 1개만 사용)
+        // 5. DTO 변환 (StoreBrand 기준)
         List<UserMembershipBrandResponseDTO.AvailableStoreDTO> storeDTOs =
                 resultBrands.stream()
-                        .map(brand -> {
-                            Long storeId =
-                                    storeRepository
-                                            .findStoreIdsByBrandId(brand.getId(), PageRequest.of(0, 1))
-                                            .get(0);
-
-                            return UserMembershipBrandResponseDTO.AvailableStoreDTO.builder()
-                                    .storeId(storeId)
-                                    .brandName(brand.getName())
-                                    .logoUrl(brand.getLogoUrl())
-                                    .build();
-                        })
+                        .map(brand ->
+                                UserMembershipBrandResponseDTO.AvailableStoreDTO.builder()
+                                        .storeBrandId(brand.getId())
+                                        .brandName(brand.getName())
+                                        .logoUrl(brand.getLogoUrl())
+                                        .build()
+                        )
                         .toList();
 
         return UserMembershipBrandResponseDTO.AvailableStoreListDTO.builder()
