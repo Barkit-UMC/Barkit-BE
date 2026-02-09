@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -106,6 +107,21 @@ public class UserController implements UserControllerDocs{
             @RequestBody @Valid UserRequestDto.KakaoLoginRequestDto request
     ) {
         return ApiResponse.onSuccess(UserSuccessCode.LOGIN_OK, userQueryService.kakaoLogin(request));
+    }
+
+    // 네이버 로그인 API
+    @PostMapping("/auth/oauth/naver/login")
+    public ApiResponse<UserResponseDto.LoginResponseDto> naverLogin(
+            @RequestBody @Valid UserRequestDto.NaverLoginRequestDto request
+    ) {
+        return ApiResponse.onSuccess(UserSuccessCode.LOGIN_OK, userQueryService.naverLogin(request));
+    }
+
+    // 네이버 authorize URL 생성 API (프론트 연동용)
+    @GetMapping("/auth/oauth/naver/authorize-url")
+    public ApiResponse<String> naverAuthorizeUrl(@RequestParam String redirectUri) {
+        String url = userQueryService.getNaverAuthorizeUrl(redirectUri);
+        return ApiResponse.onSuccess(UserSuccessCode.LOGIN_OK, url);
     }
 
 

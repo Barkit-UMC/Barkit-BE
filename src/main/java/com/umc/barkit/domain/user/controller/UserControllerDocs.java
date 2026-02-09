@@ -5,10 +5,12 @@ import com.umc.barkit.domain.user.dto.res.UserResponseDto;
 import com.umc.barkit.global.apiPayload.ApiResponse;
 import com.umc.barkit.global.auth.details.CustomUserDetails;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import jakarta.validation.Valid;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
 
 public interface UserControllerDocs {
 
@@ -158,6 +160,36 @@ public interface UserControllerDocs {
     })
     ApiResponse<UserResponseDto.LoginResponseDto> kakaoLogin(
             @RequestBody @Valid UserRequestDto.KakaoLoginRequestDto request
+    );
+
+    @Operation(
+            summary = "네이버 authorize URL 생성 API",
+            description = "프론트에서 redirectUri를 전달하면, 백엔드가 state를 생성하고 네이버 로그인 페이지로 이동할 authorize URL을 반환합니다.<br>" +
+                    "프론트는 반환된 URL로 이동하여 네이버 로그인/동의 화면을 진행합니다.<br>" +
+                    "성공 후 프론트 redirectUri로 code/state가 전달됩니다."
+    )
+    @ApiResponses({
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "생성 성공 (네이버 authorize URL 반환)"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "redirectUri 누락/형식 오류")
+    })
+    ApiResponse<String> naverAuthorizeUrl(
+            @Parameter(description = "프론트 콜백 redirectUri", required = true,
+                    example = "http://localhost:5173/oauth/naver/callback")
+            @RequestParam String redirectUri
+    );
+
+
+    @Operation(
+            summary = "네이버 로그인 API",
+            description = "프론트에서 네이버 인가 코드(code), state, redirectUri를 전달하면,<br>" +
+                    "백엔드가 state 검증 → 네이버 토큰 교환 → 사용자 정보 조회 → 서비스 JWT(accessToken/refreshToken) 발급을 수행합니다."
+    )
+    @ApiResponses({
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "로그인 성공, 서비스 JWT(accessToken/refreshToken) 반환"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "요청 값 검증 실패 (code/state/redirectUri 누락 등)")
+    })
+    ApiResponse<UserResponseDto.LoginResponseDto> naverLogin(
+            @RequestBody @Valid UserRequestDto.NaverLoginRequestDto request
     );
 
 }
