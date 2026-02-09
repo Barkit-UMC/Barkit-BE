@@ -22,10 +22,7 @@ public enum MembershipErrorCode implements BaseErrorCode {
     MEMBERSHIP4006(HttpStatus.FORBIDDEN, "MEMBERSHIP4006", "본인의 멤버십만 대표 멤버십으로 설정할 수 있습니다."),
     MEMBERSHIP4007(HttpStatus.BAD_REQUEST, "MEMBERSHIP4007", "대표 멤버십은 최대 3개까지 설정할 수 있습니다."),
     MEMBERSHIP4008(HttpStatus.BAD_REQUEST, "MEMBERSHIP4008", "멤버십 번호는 최소 12자 이상이어야 합니다."),
-    MEMBERSHIP4009(HttpStatus.CONFLICT, "MEMBERSHIP4009", "이미 저장된 멤버십 브랜드입니다."),
-
-    // ========== 바코드 에러 (BARCODE) ==========
-    BARCODE4001(HttpStatus.BAD_REQUEST, "BARCODE4001", "지원하지 않는 바코드 형식입니다.");
+    MEMBERSHIP4009(HttpStatus.CONFLICT, "MEMBERSHIP4009", "이미 저장된 멤버십 브랜드입니다.");
 
     private final HttpStatus status;
     private final String code;
