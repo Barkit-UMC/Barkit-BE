@@ -24,7 +24,7 @@ public class UserConverter {
                 .passwordHash(passwordHash)
                 .role(role)
                 .phoneNumber(null)
-                .birthDate(null)
+                .birthDate(dto.birthDate())
                 .status(UserStatus.ACTIVE) // 초기 상태는 ACTIVE
                 .deletedAt(null) // 삭제 시간은 null
                 .build();
