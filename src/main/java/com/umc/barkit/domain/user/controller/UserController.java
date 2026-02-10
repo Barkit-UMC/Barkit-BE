@@ -122,7 +122,7 @@ public class UserController implements UserControllerDocs{
     @GetMapping("/auth/oauth/naver/authorize-url")
     public ApiResponse<String> naverAuthorizeUrl(@RequestParam String redirectUri) {
         String url = userQueryService.getNaverAuthorizeUrl(redirectUri);
-        return ApiResponse.onSuccess(UserSuccessCode.LOGIN_OK, url);
+        return ApiResponse.onSuccess(UserSuccessCode.OAUTH_AUTHORIZE_URL_OK, url);
     }
 
 

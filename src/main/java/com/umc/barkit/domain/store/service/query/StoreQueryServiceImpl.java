@@ -20,6 +20,7 @@ import com.umc.barkit.domain.store.exception.StoreException;
 import com.umc.barkit.domain.store.exception.code.StoreErrorCode;
 import com.umc.barkit.domain.store.external.google.GoogleMapSearchClient;
 import com.umc.barkit.domain.store.external.google.dto.GoogleResDTO;
+import com.umc.barkit.domain.store.external.google.service.GoogleSearchCacheService;
 import com.umc.barkit.domain.store.repository.StoreBrandAliasRepository;
 import com.umc.barkit.domain.store.repository.StoreBrandMembershipBrandRepository;
 import com.umc.barkit.domain.store.repository.StoreBrandRepository;
@@ -58,6 +59,7 @@ public class StoreQueryServiceImpl implements StoreQueryService{
 
     private final GoogleMapSearchClient googleClient;
     private final StoreCommandService storeCommandService;
+    private final GoogleSearchCacheService googleSearchCacheService;
 
     @Qualifier("googleSearchExecutor")
     private final Executor googleSearchExecutor;
@@ -349,7 +351,7 @@ public class StoreQueryServiceImpl implements StoreQueryService{
         Double sendLng = (distanceType == DistanceType.CURRENT) ? userLng : centerLng;
 
         // 검색 반경 5km 필터 적용
-        List<GoogleResDTO.Place> places = googleClient.searchText(query, sendLat, sendLng);
+        List<GoogleResDTO.Place> places = googleSearchCacheService.searchNear(query, sendLat, sendLng);
         if (places == null || places.isEmpty()) return List.of();
 
         List<StoreResDTO.SearchedStoreMembership> membershipsDTO =
@@ -377,7 +379,7 @@ public class StoreQueryServiceImpl implements StoreQueryService{
     ) {
         // 위치 없이 호출
         // 검색 반경 5km 필터 미적용
-        List<GoogleResDTO.Place> places = googleClient.searchText(query);
+        List<GoogleResDTO.Place> places = googleSearchCacheService.searchGlobal(query);
         if (places == null || places.isEmpty()) return List.of();
 
         List<StoreResDTO.SearchedStoreMembership> membershipsDTO =
@@ -442,7 +444,7 @@ public class StoreQueryServiceImpl implements StoreQueryService{
             Long storeBrandId = filteredBrandIds.get(i);
 
             futures.add(CompletableFuture.supplyAsync(() -> {
-                        List<GoogleResDTO.Place> places = googleClient.searchText(storeName, sendLat, sendLng);
+                        List<GoogleResDTO.Place> places = googleSearchCacheService.searchNear(storeName, sendLat, sendLng);
                         return new GooglePlaceDTO.BrandPlacesResult(storeBrandId, storeName, places);
                     }, googleSearchExecutor)
                     .orTimeout(3, TimeUnit.SECONDS)

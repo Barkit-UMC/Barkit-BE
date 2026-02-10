@@ -49,4 +49,11 @@ public class UserOauth {
         this.disconnectedAt = now;
         this.providerUid = anonymizedProviderUid;
     }
+
+    public void reconnect(User user, String providerEmail) {
+        this.user = user;
+        this.providerEmail = providerEmail;
+        this.connectedAt = LocalDateTime.now();
+        this.disconnectedAt = null;
+    }
 }

@@ -186,4 +186,53 @@ public class UserMembershipBrandController {
                 .status(GeneralSuccessCode.OK.getStatus())
                 .body(ApiResponse.onSuccess(GeneralSuccessCode.OK, result));
     }
+
+    @Operation(
+            summary = "멤버십 번호 변경",
+            description = "사용자가 등록한 멤버십의 번호를 변경합니다."
+    )
+    @PatchMapping("/{userMembershipBrandId}")
+    public ResponseEntity<ApiResponse<UserMembershipBrandResponseDTO.RegisterMembershipResultDTO>> updateMembershipNumber(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @PathVariable Long userMembershipBrandId,
+            @RequestBody UserMembershipBrandRequestDTO.RegisterMembershipDTO request
+    ) {
+        // JWT 인증 체크
+        if (userDetails == null) {
+            throw new GeneralException(GeneralErrorCode.UNAUTHORIZED);
+        }
+
+        Long userId = userDetails.getUserId();
+
+        UserMembershipBrandResponseDTO.RegisterMembershipResultDTO result =
+                userMembershipBrandCommandService.updateMembershipNumber(userId, userMembershipBrandId, request);
+
+        return ResponseEntity
+                .status(GeneralSuccessCode.OK.getStatus())
+                .body(ApiResponse.onSuccess(GeneralSuccessCode.OK, result));
+    }
+
+    @Operation(
+            summary = "멤버십 삭제",
+            description = "사용자가 등록한 멤버십을 삭제합니다."
+    )
+    @DeleteMapping("/{userMembershipBrandId}")
+    public ResponseEntity<ApiResponse<UserMembershipBrandResponseDTO.RegisterMembershipResultDTO>> deleteMembership(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @PathVariable Long userMembershipBrandId
+    ) {
+        // JWT 인증 체크
+        if (userDetails == null) {
+            throw new GeneralException(GeneralErrorCode.UNAUTHORIZED);
+        }
+
+        Long userId = userDetails.getUserId();
+
+        UserMembershipBrandResponseDTO.RegisterMembershipResultDTO result =
+                userMembershipBrandCommandService.deleteMembership(userId, userMembershipBrandId);
+
+        return ResponseEntity
+                .status(GeneralSuccessCode.OK.getStatus())
+                .body(ApiResponse.onSuccess(GeneralSuccessCode.OK, result));
+    }
 }

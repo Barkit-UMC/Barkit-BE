@@ -45,4 +45,15 @@ public class UserResponseDto {
             Long userId,
             LocalDateTime deletedAt
     ) {}
+  
+    public record OAuthProviderStatusDto(
+            boolean connected,
+            String providerEmail,
+            LocalDateTime connectedAt
+    ) {}
+
+    public record OAuthStatusResponseDto(
+            OAuthProviderStatusDto kakao,
+            OAuthProviderStatusDto naver
+    ) {}
 }

@@ -23,4 +23,30 @@ public interface UserMembershipBrandCommandService {
      * @param userMembershipBrandId 대표로 설정/해제할 유저 멤버십 ID
      */
     boolean updateMainMembership(Long userId, Long userMembershipBrandId);
+
+    /**
+     * 멤버십 번호 변경
+     *
+     * @param userId 로그인한 사용자 ID
+     * @param userMembershipBrandId 변경할 멤버십 ID
+     * @param request 새로운 멤버십 번호
+     * @return 업데이트된 멤버십 정보
+     */
+    UserMembershipBrandResponseDTO.RegisterMembershipResultDTO updateMembershipNumber(
+            Long userId,
+            Long userMembershipBrandId,
+            UserMembershipBrandRequestDTO.RegisterMembershipDTO request
+    );
+
+    /**
+     * 멤버십 삭제 (Hard Delete)
+     *
+     * @param userId 로그인한 사용자 ID
+     * @param userMembershipBrandId 삭제할 멤버십 ID
+     * @return 삭제된 멤버십 정보
+     */
+    UserMembershipBrandResponseDTO.RegisterMembershipResultDTO deleteMembership(
+            Long userId,
+            Long userMembershipBrandId
+    );
 }
