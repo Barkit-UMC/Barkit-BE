@@ -69,7 +69,7 @@ jobs:
 
 
         run: |
-          echo "$EC2_SSH_KEY" > private_key.pem
+          printf '%s' "$EC2_SSH_KEY" | tr -d '\r' > private_key.pem
           chmod 600 private_key.pem
           
           jar_file=$(find build/libs -name '*.jar' ! -name '*plain.jar' | head -n 1)
