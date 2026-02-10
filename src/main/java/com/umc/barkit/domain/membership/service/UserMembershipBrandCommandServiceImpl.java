@@ -7,6 +7,7 @@ import com.umc.barkit.domain.membership.entity.UserMembershipBrand;
 import com.umc.barkit.domain.membership.exception.code.MembershipErrorCode;
 import com.umc.barkit.domain.membership.repository.MembershipBrandRepository;
 import com.umc.barkit.domain.membership.repository.UserMembershipBrandRepository;
+import com.umc.barkit.domain.membership.exception.MembershipException;
 import com.umc.barkit.global.apiPayload.code.GeneralErrorCode;
 import com.umc.barkit.global.apiPayload.exception.GeneralException;
 import lombok.RequiredArgsConstructor;
@@ -124,5 +125,62 @@ public class UserMembershipBrandCommandServiceImpl implements UserMembershipBran
 
         // 7. 토글 결과 반환
         return isNowMain;
+    }
+
+    @Override
+    @Transactional
+    public UserMembershipBrandResponseDTO.RegisterMembershipResultDTO updateMembershipNumber(
+            Long userId,
+            Long userMembershipBrandId,
+            UserMembershipBrandRequestDTO.RegisterMembershipDTO request
+    ) {
+        // 1. 유효성 검사
+        validateMembershipNumber(request.getMembershipNumber());
+
+        // 2. UserMembershipBrand 조회
+        UserMembershipBrand userMembershipBrand = userMembershipBrandRepository
+                .findById(userMembershipBrandId)
+                .orElseThrow(() -> new MembershipException(MembershipErrorCode.MEMBERSHIP4004));
+
+        // 3. 본인 소유 확인
+        if (!userMembershipBrand.getUserId().equals(userId)) {
+            throw new MembershipException(MembershipErrorCode.MEMBERSHIP4005);
+        }
+
+        // 4. 멤버십 번호 업데이트
+        userMembershipBrand.updateMembershipNumber(request.getMembershipNumber());
+
+        // 5. DB 저장
+        UserMembershipBrand updated = userMembershipBrandRepository.save(userMembershipBrand);
+
+        // 6. 응답 DTO 변환 및 반환
+        return UserMembershipBrandConverter.toRegisterMembershipResultDTO(updated);
+    }
+
+    @Override
+    @Transactional
+    public UserMembershipBrandResponseDTO.RegisterMembershipResultDTO deleteMembership(
+            Long userId,
+            Long userMembershipBrandId
+    ) {
+        // 1. UserMembershipBrand 조회
+        UserMembershipBrand userMembershipBrand = userMembershipBrandRepository
+                .findById(userMembershipBrandId)
+                .orElseThrow(() -> new MembershipException(MembershipErrorCode.MEMBERSHIP4004));
+
+        // 2. 본인 소유 확인
+        if (!userMembershipBrand.getUserId().equals(userId)) {
+            throw new MembershipException(MembershipErrorCode.MEMBERSHIP4005);
+        }
+
+        // 3. 삭제 전에 응답 DTO 먼저 생성
+        UserMembershipBrandResponseDTO.RegisterMembershipResultDTO response =
+                UserMembershipBrandConverter.toRegisterMembershipResultDTO(userMembershipBrand);
+
+        // 4. DB에서 완전 삭제
+        userMembershipBrandRepository.delete(userMembershipBrand);
+
+        // 5. 미리 만들어둔 응답 반환
+        return response;
     }
 }

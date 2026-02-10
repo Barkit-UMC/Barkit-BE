@@ -32,4 +32,8 @@ public class UserMembershipBrand extends BaseEntity {
     public void updateIsMain(boolean isMain) {
         this.isMain = isMain;
     }
+
+    public void updateMembershipNumber(String membershipNumber) {
+        this.membershipNumber = membershipNumber;
+    }
 }
