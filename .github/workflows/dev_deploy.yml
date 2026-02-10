@@ -74,6 +74,9 @@ jobs:
           
           jar_file=$(find build/libs -name '*.jar' ! -name '*plain.jar' | head -n 1)
           
+          ssh -vvv -i private_key.pem -o StrictHostKeyChecking=no \
+            $EC2_USERNAME@$EC2_HOST "echo SSH_OK && whoami && hostname"
+  
           scp -i private_key.pem -o StrictHostKeyChecking=no "$jar_file" \
             $EC2_USERNAME@$EC2_HOST:/home/$EC2_USERNAME/umcBarkitServer.jar
           
