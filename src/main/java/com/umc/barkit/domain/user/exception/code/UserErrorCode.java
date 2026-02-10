@@ -33,8 +33,11 @@ public enum UserErrorCode implements BaseErrorCode {
     INVALID_CURRENT_PASSWORD(HttpStatus.BAD_REQUEST, "USER4003", "현재 비밀번호가 올바르지 않습니다."),
 
     // 사용자
-    NOT_FOUND(HttpStatus.NOT_FOUND, "USER4004", "사용자를 찾을 수 없습니다.");
+    NOT_FOUND(HttpStatus.NOT_FOUND, "USER4004", "사용자를 찾을 수 없습니다."),
 
+    // 소셜 연동
+    OAUTH_ALREADY_CONNECTED(HttpStatus.CONFLICT, "OAUTH4001", "이미 해당 소셜 계정이 연동되어 있습니다."),
+    OAUTH_ALREADY_LINKED_TO_OTHER_USER(HttpStatus.CONFLICT, "OAUTH4002", "이미 다른 계정에 연동된 소셜 계정입니다.");
 
     private final HttpStatus status;
     private final String code;

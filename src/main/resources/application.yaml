@@ -51,6 +51,7 @@ kakao:
     redirect-uri-allowlist:
       - http://localhost:5173/oauth/kakao/callback
       - http://localhost:8080/oauth/kakao/callback
+      - http://localhost:8080/oauth/kakao/code
 
 naver:
   oauth:
@@ -62,3 +63,4 @@ naver:
     redirect-uri-allowlist:
       - http://localhost:5173/oauth/naver/callback
       - http://localhost:8080/oauth/naver/callback
+      - http://localhost:8080/oauth/naver/code

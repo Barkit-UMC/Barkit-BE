@@ -48,4 +48,11 @@ public class UserOauth {
     public void disconnect() {
         this.disconnectedAt = LocalDateTime.now();
     }
+
+    public void reconnect(User user, String providerEmail) {
+        this.user = user;
+        this.providerEmail = providerEmail;
+        this.connectedAt = LocalDateTime.now();
+        this.disconnectedAt = null;
+    }
 }
