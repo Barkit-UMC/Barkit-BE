@@ -58,6 +58,7 @@ kakao:
       - http://localhost:5173/oauth/kakao/callback
       - http://localhost:8080/oauth/kakao/callback
       - http://localhost:8080/oauth/kakao/code
+      - https://www.barkit.site/oauth/kakao/callback
 
 naver:
   oauth:
@@ -70,3 +71,4 @@ naver:
       - http://localhost:5173/oauth/naver/callback
       - http://localhost:8080/oauth/naver/callback
       - http://localhost:8080/oauth/naver/code
+      - https://www.barkit.site/oauth/naver/callback
