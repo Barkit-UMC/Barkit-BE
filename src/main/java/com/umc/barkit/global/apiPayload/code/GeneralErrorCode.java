@@ -37,7 +37,10 @@ public enum GeneralErrorCode implements BaseErrorCode {
     MEMBERSHIP4005(HttpStatus.CONFLICT, "MEMBERSHIP4005", "이미 저장된 멤버십 브랜드입니다."),
 
     // ========== 바코드 에러 (BARCODE) ==========
-    BARCODE4001(HttpStatus.BAD_REQUEST, "BARCODE4001", "지원하지 않는 바코드 형식입니다.");
+    BARCODE4001(HttpStatus.BAD_REQUEST, "BARCODE4001", "지원하지 않는 바코드 형식입니다."),
+
+    // ========== 홈 에러 (HOME) ==========
+    HOME4001(HttpStatus.INTERNAL_SERVER_ERROR, "HOME4001", "홈 데이터를 조회하는 중 오류가 발생했습니다.");
 
     private final HttpStatus status;
     private final String code;
