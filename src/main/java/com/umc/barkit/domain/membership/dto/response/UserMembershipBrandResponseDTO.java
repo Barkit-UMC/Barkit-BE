@@ -62,7 +62,8 @@ public class UserMembershipBrandResponseDTO {
     @NoArgsConstructor
     @AllArgsConstructor
     public static class AvailableStoreDTO {
-        private Long storeId;
+        // storeId  → storeBrandId
+        private Long storeBrandId;
         private String brandName;
         private String logoUrl;
     }

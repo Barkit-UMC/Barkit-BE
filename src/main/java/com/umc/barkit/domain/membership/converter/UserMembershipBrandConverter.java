@@ -113,22 +113,6 @@ public class UserMembershipBrandConverter {
                 .build();
     }
 
-    /* =========================
-       사용 가능 매장 조회(브랜드)
-     ========================= */
-    public UserMembershipBrandResponseDTO.AvailableStoreDTO
-    toAvailableStoreDTO(Store store) {
-
-        StoreBrand brand = store.getBrand();
-
-        return UserMembershipBrandResponseDTO.AvailableStoreDTO.builder()
-                .storeId(store.getId())          // 내부용 (cursor용)
-                //.storeName(null)               // 지점명 없음
-                .brandName(brand.getName())      // 브랜드명
-                .logoUrl(brand.getLogoUrl())
-                //.address(null)
-                .build();
-    }
 }
 
 
