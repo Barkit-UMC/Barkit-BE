@@ -34,6 +34,7 @@ public enum UserErrorCode implements BaseErrorCode {
 
     // 사용자
     NOT_FOUND(HttpStatus.NOT_FOUND, "USER4004", "사용자를 찾을 수 없습니다."),
+    INACTIVE_USER(HttpStatus.FORBIDDEN, "USER4005", "탈퇴한 사용자는 해당 기능을 사용할 수 없습니다."),
 
     // 소셜 연동
     OAUTH_ALREADY_CONNECTED(HttpStatus.CONFLICT, "OAUTH4001", "이미 해당 소셜 계정이 연동되어 있습니다."),

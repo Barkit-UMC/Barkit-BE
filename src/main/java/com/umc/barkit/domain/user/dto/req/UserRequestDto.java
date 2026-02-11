@@ -98,11 +98,13 @@ public class UserRequestDto {
     }
 
     // 알림 설정 변경
+    @NotNull
     public record UpdateNotificationRequestDto(
             Boolean enabled
     ) {}
 
     // 위치 권한 동의 변경
+    @NotNull
     public record UpdateLocationConsentRequestDto(
             Boolean consented
 

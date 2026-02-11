@@ -117,6 +117,17 @@ public class UserCommandService {
         User user = userRepository.findByIdAndStatus(userId, UserStatus.ACTIVE)
                 .orElseThrow(() -> new UserException(UserErrorCode.NOT_FOUND));
 
+        // 1️. INACTIVE 유저 차단
+        if (user.getStatus() == UserStatus.INACTIVE) {
+            throw new UserException(UserErrorCode.INACTIVE_USER);
+        }
+
+
+        // 2. 동일 상태 요청 방어
+        if (Boolean.TRUE.equals(user.getNotificationEnabled()) == enabled) {
+            return;
+        }
+
         user.updateNotificationEnabled(enabled);
     }
 
@@ -125,6 +136,16 @@ public class UserCommandService {
     public void updateLocationConsent(Long userId, Boolean consented) {
         User user = userRepository.findByIdAndStatus(userId, UserStatus.ACTIVE)
                 .orElseThrow(() -> new UserException(UserErrorCode.NOT_FOUND));
+
+        // 1️. INACTIVE 유저 차단
+        if (user.getStatus() == UserStatus.INACTIVE) {
+            throw new UserException(UserErrorCode.INACTIVE_USER);
+        }
+
+        // 2️. 동일 상태 요청 방어
+        if (user.getLocationConsent().equals(consented)) {
+            return;
+        }
 
         user.updateLocationConsent(consented);
     }
