@@ -116,10 +116,10 @@ public class UserMembershipBrandQueryServiceImpl implements UserMembershipBrandQ
         UserMembershipBrand umb =
                 userMembershipBrandRepository.findById(userMembershipBrandId)
                         .orElseThrow(() ->
-                                new MembershipException(MembershipErrorCode.MEMBERSHIP4001));
+                                new MembershipException(MembershipErrorCode.MEMBERSHIP4004));
 
         if (!umb.getUserId().equals(userId)) {
-            throw new MembershipException(MembershipErrorCode.MEMBERSHIP4003);
+            throw new MembershipException(MembershipErrorCode.MEMBERSHIP4005);
         }
 
         // 2. 멤버십 브랜드 ID

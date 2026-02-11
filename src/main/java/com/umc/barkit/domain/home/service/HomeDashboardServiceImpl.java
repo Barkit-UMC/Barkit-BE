@@ -5,6 +5,8 @@ import com.umc.barkit.domain.membership.entity.MembershipBrand;
 import com.umc.barkit.domain.membership.entity.UserMembershipBrand;
 import com.umc.barkit.domain.membership.repository.MembershipBrandRepository;
 import com.umc.barkit.domain.membership.repository.UserMembershipBrandRepository;
+import com.umc.barkit.global.apiPayload.code.GeneralErrorCode;
+import com.umc.barkit.global.apiPayload.exception.GeneralException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -73,6 +75,10 @@ public class HomeDashboardServiceImpl implements HomeDashboardService {
                         .map(umb -> {
                             MembershipBrand brand =
                                     membershipBrandMap.get(umb.getMembershipBrandId());
+
+                            if (brand == null) {
+                                throw new GeneralException(GeneralErrorCode.HOME4001);
+                            }
 
                             return HomeDashboardResponse.MembershipSummaryDTO.builder()
                                     .userMembershipBrandId(umb.getId())
