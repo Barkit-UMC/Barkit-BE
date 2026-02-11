@@ -5,8 +5,8 @@ spring:
   data:
     redis:
       enabled: false
-    cache:
-      type: none
+  cache:
+    type: none
 
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
