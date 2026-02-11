@@ -54,9 +54,10 @@ public class User extends BaseEntity {
     @Column(name = "location_consent", nullable = false)
     private Boolean locationConsent = false;
 
-    public void softDelete() {
-        this.deletedAt = LocalDateTime.now();
+    public void softDelete(String anonymizedEmail, LocalDateTime now) {
+        this.deletedAt = now;
         this.status = UserStatus.INACTIVE;
+        this.email = anonymizedEmail;
     }
 
     // 생년월일 변경

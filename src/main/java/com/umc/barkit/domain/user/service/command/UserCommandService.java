@@ -5,15 +5,21 @@ import com.umc.barkit.domain.user.dto.req.UserRequestDto;
 import com.umc.barkit.domain.user.dto.res.UserResponseDto;
 import com.umc.barkit.domain.user.entity.Term;
 import com.umc.barkit.domain.user.entity.User;
+import com.umc.barkit.domain.user.entity.UserOauth;
 import com.umc.barkit.domain.user.entity.mapping.UserTerm;
 import com.umc.barkit.domain.user.enums.Role;
+import com.umc.barkit.domain.user.enums.UserStatus;
 import com.umc.barkit.domain.user.exception.UserException;
 import com.umc.barkit.domain.user.exception.code.UserErrorCode;
 import com.umc.barkit.domain.user.repository.TermRepository;
+import com.umc.barkit.domain.user.repository.UserOauthRepository;
 import com.umc.barkit.domain.user.repository.UserRepository;
+import com.umc.barkit.domain.user.repository.UserSessionRepository;
 import com.umc.barkit.domain.user.repository.UserTermRepository;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
+import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -27,13 +33,15 @@ public class UserCommandService {
     private final UserRepository userRepository;
     private final UserTermRepository userTermRepository;
     private final PasswordEncoder passwordEncoder;
+    private final UserSessionRepository userSessionRepository;
+    private final UserOauthRepository userOauthRepository;
 
     // 회원가입
     @Transactional
     public UserResponseDto.SignupResponseDto signup(UserRequestDto.SignupRequestDto signupRequestDto){
 
         // 이메일 중복 확인
-        if (userRepository.existsByEmail(signupRequestDto.email())) {
+        if (userRepository.existsByEmailAndStatus(signupRequestDto.email(), UserStatus.ACTIVE)) {
             throw new UserException(UserErrorCode.EMAIL_ALREADY_EXISTS);
         }
 
@@ -65,7 +73,7 @@ public class UserCommandService {
     // 생년월일 변경
     @Transactional
     public void updateBirthDate(Long userId, LocalDate birthDate){
-        User user = userRepository.findById(userId)
+        User user = userRepository.findByIdAndStatus(userId, UserStatus.ACTIVE)
                 .orElseThrow(() -> new UserException(UserErrorCode.NOT_FOUND));
 
         user.updateBirthDate(birthDate);
@@ -75,7 +83,7 @@ public class UserCommandService {
     @Transactional
     public void updatePassword(Long userId, UserRequestDto.UpdatePasswordRequestDto request){
         // 현재 비밀번호 검증
-        User user = userRepository.findById(userId)
+        User user = userRepository.findByIdAndStatus(userId, UserStatus.ACTIVE)
                 .orElseThrow(() -> new UserException(UserErrorCode.NOT_FOUND));
 
         // 현재 비밀번호와 입력한 비밀번호 비교
@@ -106,7 +114,7 @@ public class UserCommandService {
     // 알림 설정 변경
     @Transactional
     public void updateNotification(Long userId, Boolean enabled) {
-        User user = userRepository.findById(userId)
+        User user = userRepository.findByIdAndStatus(userId, UserStatus.ACTIVE)
                 .orElseThrow(() -> new UserException(UserErrorCode.NOT_FOUND));
 
         user.updateNotificationEnabled(enabled);
@@ -115,9 +123,31 @@ public class UserCommandService {
     // 위치 권한 동의 상태 변경
     @Transactional
     public void updateLocationConsent(Long userId, Boolean consented) {
-        User user = userRepository.findById(userId)
+        User user = userRepository.findByIdAndStatus(userId, UserStatus.ACTIVE)
                 .orElseThrow(() -> new UserException(UserErrorCode.NOT_FOUND));
 
         user.updateLocationConsent(consented);
+    }
+
+    // 회원 탈퇴
+    @Transactional
+    public UserResponseDto.WithdrawResponseDto withdraw(Long userId) {
+        User user = userRepository.findByIdAndStatus(userId, UserStatus.ACTIVE)
+                .orElseThrow(() -> new UserException(UserErrorCode.NOT_FOUND));
+
+        LocalDateTime now = LocalDateTime.now();
+
+        String anonymizedEmail = "deleted_" + user.getId() + "_" + UUID.randomUUID() + "@barkit.invalid";
+        user.softDelete(anonymizedEmail, now);
+
+        userSessionRepository.revokeAllActiveByUserId(userId, now);
+
+        List<UserOauth> oauthList = userOauthRepository.findAllByUser_IdAndDisconnectedAtIsNull(userId);
+        for (UserOauth oauth : oauthList) {
+            String anonymizedUid = "deleted_" + userId + "_" + UUID.randomUUID();
+            oauth.disconnect(anonymizedUid, now);
+        }
+
+        return new UserResponseDto.WithdrawResponseDto(user.getId(), user.getDeletedAt());
     }
 }

@@ -192,4 +192,20 @@ public interface UserControllerDocs {
             @RequestBody @Valid UserRequestDto.NaverLoginRequestDto request
     );
 
+    @Operation(
+            summary = "회원 탈퇴 API",
+            description = """
+                    로그인된 사용자의 계정을 탈퇴 처리합니다.<br>
+                    <b>Soft Delete</b> 방식으로 처리되며, 사용자 상태를 비활성화하고 deletedAt을 기록합니다.<br>
+                    또한, 사용자의 모든 활성 세션(Refresh Token)을 무효화하고, 탈퇴 후에는 기존 Access/Refresh Token으로 인증이 불가능합니다.
+                    """
+    )
+    @ApiResponses({
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "회원 탈퇴 성공"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "회원 탈퇴 실패")
+    })
+    ApiResponse<UserResponseDto.WithdrawResponseDto> withdraw(
+            @Parameter(hidden = true) @AuthenticationPrincipal CustomUserDetails userDetails
+    );
+
 }

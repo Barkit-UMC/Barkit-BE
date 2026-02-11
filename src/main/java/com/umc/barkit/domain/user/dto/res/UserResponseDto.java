@@ -40,6 +40,12 @@ public class UserResponseDto {
             LocalDate birthDate
     ) {}
 
+    // 회원 탈퇴
+    public record WithdrawResponseDto(
+            Long userId,
+            LocalDateTime deletedAt
+    ) {}
+  
     public record OAuthProviderStatusDto(
             boolean connected,
             String providerEmail,

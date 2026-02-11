@@ -14,4 +14,12 @@ import org.springframework.stereotype.Repository;
 public interface UserSessionRepository extends JpaRepository<UserSession, Long> {
     Optional<UserSession> findByUserAndRefreshTokenHashAndRevokedAtIsNull(User user, String refreshTokenHash);
 
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query("""
+        update UserSession us
+           set us.revokedAt = :now
+         where us.user.id = :userId
+           and us.revokedAt is null
+    """)
+    int revokeAllActiveByUserId(@Param("userId") Long userId, @Param("now") LocalDateTime now);
 }
