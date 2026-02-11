@@ -202,7 +202,6 @@ public class StoreQueryServiceImpl implements StoreQueryService{
                 .map(m -> StoreResDTO.MembershipInfo.builder()
                         .name(m.getMembershipBrand().getName())
                         .logoUrl(m.getMembershipBrand().getLogoUrl())
-                        .id(m.getMembershipBrand().getId())
                         .build())
                 .toList();
 
@@ -214,23 +213,26 @@ public class StoreQueryServiceImpl implements StoreQueryService{
         List<UserMembershipBrand> userMembershipEntities = userMembershipBrandRepository.findByUserId(userId);
 
 
-        List<Long> userMembershipBrandIds = userMembershipEntities.stream()
-                .map(UserMembershipBrand::getMembershipBrandId)
-                .toList();
-
+        Map<Long, Long> brandIdToUserMembershipId = userMembershipEntities.stream()
+                .collect(Collectors.toMap(
+                        UserMembershipBrand::getMembershipBrandId,   // key: membershipBrandId
+                        UserMembershipBrand::getId                   // value: user_membership_brand PK
+                ));
 
         List<Long> intersectionIds = storeMembershipBrandIds.stream()
-                .filter(userMembershipBrandIds::contains)
+                .filter(brandIdToUserMembershipId::containsKey)
                 .toList();
 
         List<StoreResDTO.UserMembershipInfo> userMembershipInfos = intersectionIds.stream()
-                .map(id -> {
-                    MembershipBrand brand = membershipBrandRepository.findById(id)
+                .map(brandId -> {
+                    MembershipBrand brand = membershipBrandRepository.findById(brandId)
                             .orElseThrow(() -> new MembershipException(MembershipErrorCode.BRAND4001));
+
                     return StoreResDTO.UserMembershipInfo.builder()
+                            .userMembershipId(brandIdToUserMembershipId.get(brandId))
+                            .membershipBrandId(brandId)
                             .name(brand.getName())
                             .logoUrl(brand.getLogoUrl())
-                            .id(brand.getId())
                             .build();
                 })
                 .toList();
