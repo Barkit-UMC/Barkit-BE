@@ -110,7 +110,12 @@ public class UserMembershipBrandQueryServiceImpl implements UserMembershipBrandQ
             Long cursor,
             Integer size
     ) {
-        int pageSize = (size == null || size <= 0) ? 20 : size;
+
+        int pageSize = 20; // 기본값
+
+        if (size != null && size > 0) {
+            pageSize = Math.min(size, 50); // 최대 50 제한
+        }
 
         // 1. 사용자 멤버십 검증
         UserMembershipBrand umb =
