@@ -84,6 +84,16 @@ public class UserController implements UserControllerDocs{
         return ApiResponse.onSuccess(UserSuccessCode.BIRTH_DATE_UPDATED, response);
     }
 
+    // 현재 비밀번호 검증 API
+    @PostMapping("/users/me/validate-password")
+    public ApiResponse<Void> validatePassword(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @Valid @RequestBody UserRequestDto.ValidatePasswordRequestDto request
+    ) {
+        userCommandService.validateCurrentPassword(userDetails.getUserId(), request);
+        return ApiResponse.onSuccess(UserSuccessCode.PASSWORD_VALIDATED, null);
+    }
+
     // 비밀번호 변경 API
     @PatchMapping("/users/me/password")
     public ApiResponse<Void> updatePassword(

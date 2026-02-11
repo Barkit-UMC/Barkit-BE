@@ -76,6 +76,18 @@ public interface UserControllerDocs {
             @Valid @RequestBody UserRequestDto.UpdateBirthDateRequestDto request
     );
 
+    @Operation(
+            summary = "현재 비밀번호 검증 API",
+            description = "사용자가 입력한 현재 비밀번호를 검증하여 비밀번호 변경을 진행할 수 있도록 합니다."
+    )
+    @ApiResponses({
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "비밀번호 검증 성공"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "비밀번호 검증 실패")
+    })
+    ApiResponse<Void> validatePassword(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @Valid @RequestBody UserRequestDto.ValidatePasswordRequestDto request
+    );
 
     @Operation(
             summary = "비밀번호 변경 API",

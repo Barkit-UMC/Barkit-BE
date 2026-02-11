@@ -79,6 +79,20 @@ public class UserCommandService {
         user.updateBirthDate(birthDate);
     }
 
+    // 현재 비밀번호 검증
+    @Transactional
+    public void validateCurrentPassword(Long userId, UserRequestDto.ValidatePasswordRequestDto request) {
+        // 사용자 조회
+        User user = userRepository.findByIdAndStatus(userId, UserStatus.ACTIVE)
+                .orElseThrow(() -> new UserException(UserErrorCode.NOT_FOUND));
+
+        // 현재 비밀번호와 입력한 비밀번호 비교
+        if (!passwordEncoder.matches(request.currentPassword(), user.getPasswordHash())) {
+            throw new UserException(UserErrorCode.INVALID_CURRENT_PASSWORD); // 비밀번호 불일치 시 예외 처리
+        }
+    }
+
+
     // 비밀번호 변경
     @Transactional
     public void updatePassword(Long userId, UserRequestDto.UpdatePasswordRequestDto request){
