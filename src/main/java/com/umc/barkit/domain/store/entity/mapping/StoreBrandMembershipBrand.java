@@ -25,4 +25,6 @@ public class StoreBrandMembershipBrand {
     @JoinColumn(name = "store_brand_id", nullable = false)
     private StoreBrand storeBrand;
 
+    @Column(name = "popularity_rank")
+    private Long popularityRank;
 }
