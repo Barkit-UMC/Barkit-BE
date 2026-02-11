@@ -202,6 +202,7 @@ public class StoreQueryServiceImpl implements StoreQueryService{
                 .map(m -> StoreResDTO.MembershipInfo.builder()
                         .name(m.getMembershipBrand().getName())
                         .logoUrl(m.getMembershipBrand().getLogoUrl())
+                        .id(m.getMembershipBrand().getId())
                         .build())
                 .toList();
 
@@ -229,6 +230,7 @@ public class StoreQueryServiceImpl implements StoreQueryService{
                     return StoreResDTO.UserMembershipInfo.builder()
                             .name(brand.getName())
                             .logoUrl(brand.getLogoUrl())
+                            .id(brand.getId())
                             .build();
                 })
                 .toList();

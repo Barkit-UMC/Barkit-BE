@@ -78,7 +78,8 @@ public class StoreResDTO {
     @Builder
     public record MembershipInfo(
             String name,
-            String logoUrl
+            String logoUrl,
+            Long id
     ){}
 
     @Builder
@@ -91,7 +92,8 @@ public class StoreResDTO {
     @Builder
     public record UserMembershipInfo(
             String name,
-            String logoUrl
+            String logoUrl,
+            Long id
     ){}
 
 }
