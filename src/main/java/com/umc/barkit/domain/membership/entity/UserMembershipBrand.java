@@ -25,6 +25,7 @@ public class UserMembershipBrand extends BaseEntity {
     @Column(name = "membership_number", nullable = false, length = 30)
     private String membershipNumber;
 
+    @Builder.Default
     @Column(name = "is_main", nullable = false)
     private Boolean isMain = false;
 
