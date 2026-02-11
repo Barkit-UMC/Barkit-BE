@@ -65,6 +65,12 @@ public class UserRequestDto {
     ) {
     }
 
+    // 현재 비밀번호 검증
+    public record ValidatePasswordRequestDto(
+            @NotNull
+            String currentPassword
+    ){}
+
     // 비밀번호 변경
     public record UpdatePasswordRequestDto(
             @NotNull
