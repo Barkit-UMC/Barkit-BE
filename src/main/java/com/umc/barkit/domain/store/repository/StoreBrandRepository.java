@@ -54,12 +54,7 @@ public interface StoreBrandRepository extends JpaRepository<StoreBrand,Long> {
     select sb
     from StoreBrand sb
     where sb.id in :storeBrandIds
-      and exists (
-          select 1
-          from Store s
-          where s.brand = sb
-            and (:cursor is null or sb.id > :cursor)
-      )
+      and (:cursor is null or sb.id > :cursor)
       and (:keyword is null
            or lower(sb.name) like lower(concat('%', :keyword, '%')))
     order by sb.id asc
