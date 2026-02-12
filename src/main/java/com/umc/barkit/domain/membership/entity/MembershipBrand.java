@@ -22,7 +22,7 @@ public class MembershipBrand extends BaseEntity {
     @Column(name = "logo_url", length = 255)
     private String logoUrl;
 
-    @Column(name = "color", length = 10)
+    @Column(name = "color", columnDefinition = "TEXT")
     private String color;
 
 }
