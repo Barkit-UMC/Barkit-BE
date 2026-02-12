@@ -27,7 +27,7 @@ public interface StoreControllerDocs {
 
     // 지도 검색 기능(멤버십/매장)
     @Operation(
-            summary = "지도 검색 기능 API By remy (개발 중)",
+            summary = "지도 검색 기능 API",
             description = "지도에서 멤버십/매장 기준으로 검색합니다. " +
                     "카테고리와 정렬기준(현재 내 위치/지도 중심 위치, 거리순/인기순)을 선택할 수 있습니다."
     )

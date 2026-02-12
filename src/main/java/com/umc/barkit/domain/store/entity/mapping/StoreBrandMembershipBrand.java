@@ -1,8 +1,6 @@
 package com.umc.barkit.domain.store.entity.mapping;
 
 import com.umc.barkit.domain.membership.entity.MembershipBrand;
-import com.umc.barkit.domain.store.entity.Facility;
-import com.umc.barkit.domain.store.entity.Store;
 import com.umc.barkit.domain.store.entity.StoreBrand;
 import jakarta.persistence.*;
 import lombok.*;
