@@ -2,33 +2,23 @@ package com.umc.barkit.domain.store.service.query;
 
 import com.umc.barkit.domain.membership.entity.MembershipBrand;
 import com.umc.barkit.domain.membership.entity.UserMembershipBrand;
-import com.umc.barkit.domain.membership.exception.MembershipException;
-import com.umc.barkit.domain.membership.exception.code.MembershipErrorCode;
 import com.umc.barkit.domain.membership.repository.MembershipBrandAliasRepository;
 import com.umc.barkit.domain.membership.repository.MembershipBrandRepository;
 import com.umc.barkit.domain.membership.repository.UserMembershipBrandRepository;
 import com.umc.barkit.domain.store.dto.google.GooglePlaceDTO;
 import com.umc.barkit.domain.store.dto.req.StoreReqDTO;
 import com.umc.barkit.domain.store.dto.res.StoreResDTO;
-import com.umc.barkit.domain.store.entity.Store;
 import com.umc.barkit.domain.store.entity.StoreBrand;
-import com.umc.barkit.domain.store.entity.mapping.StoreBrandMembershipBrand;
 import com.umc.barkit.domain.store.enums.Category;
 import com.umc.barkit.domain.store.enums.DistanceType;
-import com.umc.barkit.domain.store.enums.Sort;
-import com.umc.barkit.domain.store.exception.StoreException;
-import com.umc.barkit.domain.store.exception.code.StoreErrorCode;
 import com.umc.barkit.domain.store.external.google.GoogleMapSearchClient;
 import com.umc.barkit.domain.store.external.google.dto.GoogleResDTO;
 import com.umc.barkit.domain.store.external.google.service.GoogleSearchCacheService;
 import com.umc.barkit.domain.store.repository.StoreBrandAliasRepository;
 import com.umc.barkit.domain.store.repository.StoreBrandMembershipBrandRepository;
 import com.umc.barkit.domain.store.repository.StoreBrandRepository;
-import com.umc.barkit.domain.store.repository.StoreRepository;
 import com.umc.barkit.domain.store.repository.projection.BrandIdNameProjection;
 import com.umc.barkit.domain.store.repository.projection.BrandMembershipProjection;
-import com.umc.barkit.domain.store.repository.projection.ViewCountProjection;
-import com.umc.barkit.domain.store.service.command.StoreCommandService;
 import com.umc.barkit.domain.store.util.StoreUtil;
 import lombok.RequiredArgsConstructor;
 
@@ -49,16 +39,16 @@ import java.util.stream.Collectors;
 @Slf4j
 public class StoreQueryServiceImpl implements StoreQueryService{
 
+    private static final double MAX_DISTANCE_KM = 5.0;
+
     private final MembershipBrandRepository membershipBrandRepository;
     private final StoreBrandMembershipBrandRepository storeBrandMembershipBrandRepository;
-    private final StoreRepository storeRepository;
     private final StoreBrandRepository storeBrandRepository;
     private final StoreBrandAliasRepository storeBrandAliasRepository;
     private final MembershipBrandAliasRepository membershipBrandAliasRepository;
     private final UserMembershipBrandRepository userMembershipBrandRepository;
 
     private final GoogleMapSearchClient googleClient;
-    private final StoreCommandService storeCommandService;
     private final GoogleSearchCacheService googleSearchCacheService;
 
     @Qualifier("googleSearchExecutor")
@@ -70,7 +60,6 @@ public class StoreQueryServiceImpl implements StoreQueryService{
             StoreReqDTO.SearchReq req,
             DistanceType distanceType,
             Category category,
-            Sort sort,
             int cursor,
             int size
     ) {
@@ -119,7 +108,7 @@ public class StoreQueryServiceImpl implements StoreQueryService{
         List<StoreResDTO.SearchedStore> deduped = deduplicateByGoogleId(fullResult);
 
         //정렬
-        sortInPlace(deduped, sort);
+        sortInPlace(deduped);
 
         //페이징
         int from = Math.min(cursor, deduped.size());
@@ -137,19 +126,13 @@ public class StoreQueryServiceImpl implements StoreQueryService{
 
     }
 
-    @Transactional
+    @Transactional(readOnly = true)
     @Override
-    public StoreResDTO.StoreDetail detail(String googleId, Double userLat, Double userLng,Long userId) {
+    public StoreResDTO.StoreDetail detail(StoreReqDTO.DetailReq req, Long userId) {
 
-        // DB 조회
-        Store store = storeRepository.findByGoogleId(googleId)
-                .orElseThrow(() -> new StoreException(StoreErrorCode.STORE4001));
-
-        // 조회수
-        store.addViewCount();
 
         // Google Places API 호출
-        GooglePlaceDTO.Place g = googleClient.getPlaceDetail(googleId);
+        GooglePlaceDTO.Place g = googleClient.getPlaceDetail(req.googleId());
 
 
         // 위치 계산
@@ -161,7 +144,7 @@ public class StoreQueryServiceImpl implements StoreQueryService{
                 .lng(storeLng)
                 .build();
 
-        double distance = StoreUtil.round2(StoreUtil.distanceKm(userLat, userLng, storeLat, storeLng));
+        double distance = StoreUtil.round2(StoreUtil.distanceKm(req.userLat(), req.userLng(), storeLat, storeLng));
 
         // 영업시간 정보
         boolean isOpen = g.currentOpeningHours() != null && g.currentOpeningHours().openNow();
@@ -194,52 +177,61 @@ public class StoreQueryServiceImpl implements StoreQueryService{
                 .build();
 
 
-        // 전체 멤버십 조회
-        List<StoreBrandMembershipBrand> membershipEntities =
-                storeBrandMembershipBrandRepository.findByStoreBrandId(store.getBrand().getId());
+        List<Long> membershipIds = (req.membershipIds() == null) ? List.of() : req.membershipIds();
 
-        List<StoreResDTO.MembershipInfo> membershipInfos = membershipEntities.stream()
-                .map(m -> StoreResDTO.MembershipInfo.builder()
-                        .name(m.getMembershipBrand().getName())
-                        .logoUrl(m.getMembershipBrand().getLogoUrl())
+        if (membershipIds.isEmpty()) {
+            return StoreResDTO.StoreDetail.builder()
+                    .name(g.displayName() != null ? g.displayName().text() : "이름 정보 없음")
+                    .distance(distance)
+                    .location(location)
+                    .contact(contact)
+                    .hourInfo(hourInfo)
+                    .membership(List.of())
+                    .userMembership(List.of())
+                    .photos(photos)
+                    .build();
+        }
+
+        // 적용가능 전체 멤버십
+        Map<Long, MembershipBrand> brandMap = membershipBrandRepository.findAllById(membershipIds).stream()
+                .collect(Collectors.toMap(MembershipBrand::getId, b -> b));
+
+        List<StoreResDTO.MembershipInfo> membershipInfos = membershipIds.stream()
+                .map(id -> brandMap.get(id))
+                .filter(Objects::nonNull)
+                .map(b -> StoreResDTO.MembershipInfo.builder()
+                        .name(b.getName())
+                        .logoUrl(b.getLogoUrl())
                         .build())
                 .toList();
 
-        //보유 멤버십 조회
-        List<Long> storeMembershipBrandIds = membershipEntities.stream()
-                .map(m -> m.getMembershipBrand().getId())
-                .toList();
-
+        // 유저 보유 멤버십 조회
         List<UserMembershipBrand> userMembershipEntities = userMembershipBrandRepository.findByUserId(userId);
-
 
         Map<Long, Long> brandIdToUserMembershipId = userMembershipEntities.stream()
                 .collect(Collectors.toMap(
-                        UserMembershipBrand::getMembershipBrandId,   // key: membershipBrandId
-                        UserMembershipBrand::getId                   // value: user_membership_brand PK
+                        UserMembershipBrand::getMembershipBrandId,
+                        UserMembershipBrand::getId,
+                        (a, b) -> a // 혹시 중복 대비
                 ));
 
-        List<Long> intersectionIds = storeMembershipBrandIds.stream()
+        List<StoreResDTO.UserMembershipInfo> userMembershipInfos = membershipIds.stream()
                 .filter(brandIdToUserMembershipId::containsKey)
-                .toList();
-
-        List<StoreResDTO.UserMembershipInfo> userMembershipInfos = intersectionIds.stream()
                 .map(brandId -> {
-                    MembershipBrand brand = membershipBrandRepository.findById(brandId)
-                            .orElseThrow(() -> new MembershipException(MembershipErrorCode.BRAND4001));
+                    MembershipBrand b = brandMap.get(brandId);
+                    if (b == null) return null;
 
                     return StoreResDTO.UserMembershipInfo.builder()
                             .userMembershipId(brandIdToUserMembershipId.get(brandId))
                             .membershipBrandId(brandId)
-                            .name(brand.getName())
-                            .logoUrl(brand.getLogoUrl())
+                            .name(b.getName())
+                            .logoUrl(b.getLogoUrl())
                             .build();
                 })
+                .filter(Objects::nonNull)
                 .toList();
 
-
-
-        // DTO 조립
+        // 8) DTO 조립
         return StoreResDTO.StoreDetail.builder()
                 .name(g.displayName() != null ? g.displayName().text() : "이름 정보 없음")
                 .distance(distance)
@@ -265,46 +257,64 @@ public class StoreQueryServiceImpl implements StoreQueryService{
         return new ArrayList<>(map.values());
     }
 
-    private void sortInPlace(List<StoreResDTO.SearchedStore> searchedStores, Sort sort) {
+    private void sortInPlace(List<StoreResDTO.SearchedStore> searchedStores) {
         if (searchedStores == null || searchedStores.size() <= 1) return;
 
-        if (sort == Sort.DISTANCE) {
-            searchedStores.sort(Comparator.comparing(StoreResDTO.SearchedStore::distanceKm,
-                    Comparator.nullsLast(Double::compareTo)));
-            return;
-        }
+        searchedStores.sort(Comparator.comparing(StoreResDTO.SearchedStore::distanceKm,
+                Comparator.nullsLast(Double::compareTo)));
+    }
 
-        if (sort == Sort.POPULAR) {
+    private List<StoreResDTO.SearchedStore> mapPlaces(
+            StoreBrand matchedBrand,
+            List<GoogleResDTO.Place> places,
+            Double userLat,
+            Double userLng,
+            Double sendLat,
+            Double sendLng,
+            boolean applyRadiusFilter,
+            List<StoreResDTO.SearchedStoreMembership> membershipsDTO
+    ) {
+        if (places == null || places.isEmpty()) return List.of();
 
-            List<String> googleIds = searchedStores.stream()
-                    .map(StoreResDTO.SearchedStore::googleId)
-                    .filter(Objects::nonNull)
-                    .distinct()
-                    .toList();
+        List<Long> membershipIds = (membershipsDTO == null) ? List.of()
+                : membershipsDTO.stream()
+                .map(StoreResDTO.SearchedStoreMembership::id)
+                .filter(Objects::nonNull)
+                .toList();
 
-            if (googleIds.isEmpty()) return;
+        return places.stream()
+                .map(p -> {
+                    String googleId = p.id();
+                    GoogleResDTO.DisplayName name = p.displayName();
 
-            Map<String, Long> viewCountMap =
-                    storeRepository.findViewCountsByGoogleIds(googleIds).stream()
-                            .collect(Collectors.toMap(
-                                    ViewCountProjection::getGoogleId,
-                                    p -> Optional.ofNullable(p.getViewCount()).orElse(0L)
-                            ));
+                    double storeLat = p.location().latitude();
+                    double storeLng = p.location().longitude();
 
-            searchedStores.sort((a, b) -> {
-                long va = viewCountMap.getOrDefault(a.googleId(), 0L);
-                long vb = viewCountMap.getOrDefault(b.googleId(), 0L);
+                    if (applyRadiusFilter) {
+                        double distFromCenter = StoreUtil.distanceKm(sendLat, sendLng, storeLat, storeLng);
+                        if (distFromCenter > MAX_DISTANCE_KM) return null;
+                    }
 
-                int cmp = Long.compare(vb, va);
-                if (cmp != 0) return cmp;
+                    double distanceKm = StoreUtil.round2(
+                            StoreUtil.distanceKm(userLat, userLng, storeLat, storeLng)
+                    );
 
-                //viewCount 같으면 거리순
-                return Comparator.comparing(
-                        StoreResDTO.SearchedStore::distanceKm,
-                        Comparator.nullsLast(Double::compareTo)
-                ).compare(a, b);
-            });
-        }
+                    return StoreResDTO.SearchedStore.builder()
+                            .googleId(googleId)
+                            .name(name)
+                            .location(StoreResDTO.SearchedStoreLocation.builder()
+                                    .lat(storeLat)
+                                    .lng(storeLng)
+                                    .build())
+                            .address(p.formattedAddress())
+                            .phone(p.nationalPhoneNumber())
+                            .memberships(membershipsDTO)
+                            .membershipIds(membershipIds)
+                            .distanceKm(distanceKm)
+                            .build();
+                })
+                .filter(Objects::nonNull)
+                .toList();
     }
 
     //매장명 검색 로직
@@ -361,7 +371,7 @@ public class StoreQueryServiceImpl implements StoreQueryService{
         List<StoreResDTO.SearchedStoreMembership> membershipsDTO =
                 findMembershipsForStoreBrand(matchedBrand.getId());
 
-        return storeCommandService.saveAndMap(
+        return mapPlaces(
                 matchedBrand,
                 places,
                 userLat,
@@ -389,7 +399,7 @@ public class StoreQueryServiceImpl implements StoreQueryService{
         List<StoreResDTO.SearchedStoreMembership> membershipsDTO =
                 findMembershipsForStoreBrand(matchedBrand.getId());
 
-        return storeCommandService.saveAndMap(
+        return mapPlaces(
                 matchedBrand,
                 places,
                 userLat,
@@ -401,7 +411,8 @@ public class StoreQueryServiceImpl implements StoreQueryService{
         );
     }
 
-    //멤버십명 검색 로직
+
+    // 멤버십명 검색 로직
     private List<StoreResDTO.SearchedStore> searchByMembership(
             MembershipBrand membership,
             DistanceType distanceType,
@@ -409,38 +420,29 @@ public class StoreQueryServiceImpl implements StoreQueryService{
             Double userLat,
             Double userLng,
             Double centerLat,
-            Double centerLng) {
-
-
+            Double centerLng
+    ) {
         List<Long> storeBrandIds =
                 storeBrandMembershipBrandRepository.findStoreBrandIdsByMembershipBrandId(membership.getId());
-
         if (storeBrandIds == null || storeBrandIds.isEmpty()) return List.of();
 
-        // 카테고리 필터링 (IN 절 사용해서 한번에 조회)
         List<BrandIdNameProjection> idNames =
                 storeBrandRepository.findIdNameByIdsAndCategory(storeBrandIds, category);
-
-        // 매칭되는 카테고리 없으면 빈 리스트 반환
         if (idNames == null || idNames.isEmpty()) return List.of();
 
         List<Long> filteredBrandIds = idNames.stream().map(BrandIdNameProjection::getId).toList();
         List<String> storeNames = idNames.stream().map(BrandIdNameProjection::getName).toList();
 
-        // StoreBrand도 한번에 가져오기
         Map<Long, StoreBrand> storeBrandMap =
                 storeBrandRepository.findAllById(filteredBrandIds).stream()
                         .collect(Collectors.toMap(StoreBrand::getId, sb -> sb));
 
-        // 멤버십 DTO도 한 번에 가져오기
         Map<Long, List<StoreResDTO.SearchedStoreMembership>> membershipsByBrandId =
                 preloadMembershipsDTO(filteredBrandIds);
 
-        // 구글 api 호출 시 기준이 될 위도, 경도 정하기
         Double sendLat = (distanceType == DistanceType.CURRENT) ? userLat : centerLat;
         Double sendLng = (distanceType == DistanceType.CURRENT) ? userLng : centerLng;
 
-        // 구글 api 호출 병렬 처리
         List<CompletableFuture<GooglePlaceDTO.BrandPlacesResult>> futures = new ArrayList<>();
 
         for (int i = 0; i < storeNames.size(); i++) {
@@ -459,10 +461,8 @@ public class StoreQueryServiceImpl implements StoreQueryService{
                 .map(CompletableFuture::join)
                 .toList();
 
-
         List<StoreResDTO.SearchedStore> result = new ArrayList<>();
 
-        // api 호출 결과로 가져온 매장 db에 없으면 저장
         for (GooglePlaceDTO.BrandPlacesResult r : brandResults) {
             if (r.places() == null || r.places().isEmpty()) continue;
 
@@ -472,7 +472,7 @@ public class StoreQueryServiceImpl implements StoreQueryService{
             List<StoreResDTO.SearchedStoreMembership> membershipsDTO =
                     membershipsByBrandId.getOrDefault(r.storeBrandId(), List.of());
 
-            result.addAll(storeCommandService.saveAndMap(
+            result.addAll(mapPlaces(
                     sb,
                     r.places(),
                     userLat,
@@ -486,7 +486,6 @@ public class StoreQueryServiceImpl implements StoreQueryService{
 
         return result;
     }
-
 
     private Map<Long, List<StoreResDTO.SearchedStoreMembership>> preloadMembershipsDTO(List<Long> storeBrandIds) {
         List<BrandMembershipProjection> rows =

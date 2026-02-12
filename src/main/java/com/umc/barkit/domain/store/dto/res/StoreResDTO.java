@@ -18,13 +18,13 @@ public class StoreResDTO {
 
     @Builder
     public record SearchedStore(
-            Long storeId,
             String googleId,
             GoogleResDTO.DisplayName name,
             StoreResDTO.SearchedStoreLocation location, //매장 위도, 경도
             String address,
             String phone,
             List<StoreResDTO.SearchedStoreMembership> memberships,
+            List<Long> membershipIds,
             Double distanceKm,
             String directionUrl //길찾기(네이버/카카오) url
     ){}

@@ -4,7 +4,6 @@ import com.umc.barkit.domain.store.dto.req.StoreReqDTO;
 import com.umc.barkit.domain.store.dto.res.StoreResDTO;
 import com.umc.barkit.domain.store.enums.Category;
 import com.umc.barkit.domain.store.enums.DistanceType;
-import com.umc.barkit.domain.store.enums.Sort;
 import com.umc.barkit.global.annotation.ValidCursor;
 import com.umc.barkit.global.annotation.ValidSize;
 import com.umc.barkit.global.apiPayload.ApiResponse;
@@ -14,12 +13,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import jakarta.validation.Valid;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.ModelAttribute;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-
-import java.util.List;
+import org.springframework.web.bind.annotation.*;
 
 @RequestMapping("/api/map")
 @Validated
@@ -41,7 +35,6 @@ public interface StoreControllerDocs {
             @Valid @ModelAttribute StoreReqDTO.SearchReq req,
             @RequestParam(value = "distanceType", defaultValue = "CURRENT") DistanceType distanceType,
             @RequestParam(value = "category", defaultValue = "ALL") Category category,
-            @RequestParam(value = "sort", defaultValue = "DISTANCE") Sort sort,
             @RequestParam(value = "cursor", defaultValue = "0") @ValidCursor int cursor,
             @RequestParam(value = "size", defaultValue = "20") @ValidSize int size
             );
@@ -57,12 +50,10 @@ public interface StoreControllerDocs {
         @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "실패")
     })
 
-    @GetMapping("/store")
+    @PostMapping("/store")
     ApiResponse<StoreResDTO.StoreDetail> detail(
             @AuthenticationPrincipal CustomUserDetails userDetails,
-            @RequestParam String googleId,
-            @RequestParam("userLat") Double userLat,
-            @RequestParam("userLng") Double userLng
+            @Valid @RequestBody StoreReqDTO.DetailReq req
     );
 
 }

@@ -9,14 +9,10 @@ import com.umc.barkit.domain.membership.exception.MembershipException;
 import com.umc.barkit.domain.membership.exception.code.MembershipErrorCode;
 import com.umc.barkit.domain.membership.repository.MembershipBrandRepository;
 import com.umc.barkit.domain.store.entity.StoreBrand;
-import com.umc.barkit.domain.store.dto.google.GooglePlaceDTO;
-import com.umc.barkit.domain.store.entity.StoreBrand;
-import com.umc.barkit.domain.store.entity.Store;
 import com.umc.barkit.global.apiPayload.code.GeneralErrorCode;
 import com.umc.barkit.global.apiPayload.exception.GeneralException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
-import com.umc.barkit.domain.membership.dto.response.MembershipBrandResponseDTO;
 
 import java.util.List;
 import java.util.stream.Collectors;

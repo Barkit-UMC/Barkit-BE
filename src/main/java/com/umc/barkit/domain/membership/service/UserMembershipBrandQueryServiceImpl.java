@@ -6,30 +6,22 @@ import com.umc.barkit.domain.membership.dto.response.UserMembershipBrandResponse
 import com.umc.barkit.domain.membership.entity.UserMembershipBrand;
 import com.umc.barkit.domain.membership.repository.UserMembershipBrandRepository;
 
-import com.umc.barkit.domain.membership.dto.response.MembershipBrandResponseDTO;
 import com.umc.barkit.domain.membership.entity.MembershipBrand;
-import com.umc.barkit.domain.membership.entity.UserMembershipBrand;
 import com.umc.barkit.domain.membership.exception.code.MembershipErrorCode;
 import com.umc.barkit.domain.membership.repository.MembershipBrandRepository;
-import com.umc.barkit.domain.membership.repository.UserMembershipBrandRepository;
 import com.umc.barkit.domain.store.entity.StoreBrand;
 import com.umc.barkit.domain.store.repository.StoreBrandMembershipBrandRepository;
-import com.umc.barkit.domain.store.entity.Store;
 import com.umc.barkit.domain.store.repository.StoreBrandRepository;
-import com.umc.barkit.domain.store.repository.StoreRepository;
-import com.umc.barkit.global.apiPayload.code.BaseErrorCode;
 import com.umc.barkit.domain.store.external.google.GoogleMapSearchClient;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 import com.umc.barkit.domain.membership.exception.MembershipException;
 
@@ -44,7 +36,6 @@ public class UserMembershipBrandQueryServiceImpl implements UserMembershipBrandQ
     private final UserMembershipBrandConverter userMembershipBrandConverter;
     private final MembershipBrandRepository membershipBrandRepository;
     private final StoreBrandMembershipBrandRepository storeBrandMembershipBrandRepository;
-    private final StoreRepository storeRepository;
     private final GoogleMapSearchClient googleMapSearchClient;
     private final StoreBrandRepository storeBrandRepository;
 

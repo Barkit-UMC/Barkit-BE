@@ -7,7 +7,6 @@ import java.util.Locale;
 @Component
 public class StoreUtil {
 
-//    private StoreUtil() {}
 
     private static final double EARTH_RADIUS_KM = 6371.0;
 

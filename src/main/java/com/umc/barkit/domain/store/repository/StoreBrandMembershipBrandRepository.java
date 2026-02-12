@@ -26,6 +26,7 @@ public interface StoreBrandMembershipBrandRepository extends JpaRepository<Store
 
     List<StoreBrandMembershipBrand> findByStoreBrandId(Long storeBrandId);
 
+
     //여러 브랜드의 멤버십 정보를 한 번에 가져오기
     @Query("""
         select
