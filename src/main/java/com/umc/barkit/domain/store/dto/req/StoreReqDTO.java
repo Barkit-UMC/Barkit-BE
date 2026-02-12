@@ -10,7 +10,7 @@ public class StoreReqDTO {
             @NotBlank(message = "query는 필수입니다.")
             @Size(max = 20, message = "query는 최대 20자까지 가능합니다.")
             @Pattern(
-                    regexp = "^[가-힣a-zA-Z0-9 .+]+$",
+                    regexp = "^[가-힣a-zA-Z0-9 .+@'\\-&]+$",
                     message = "query는 한글/영문/숫자/공백/+/./만 입력 가능합니다."
             )
             String query,
