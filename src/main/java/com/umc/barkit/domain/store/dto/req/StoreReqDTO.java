@@ -3,6 +3,8 @@ package com.umc.barkit.domain.store.dto.req;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.*;
 
+import java.util.List;
+
 
 public class StoreReqDTO {
 
@@ -40,4 +42,27 @@ public class StoreReqDTO {
             return (centerLat == null && centerLng == null) || (centerLat != null && centerLng != null);
         }
     }
+
+    public record DetailReq(
+
+            @NotNull(message = "userLat는 필수입니다.")
+            @DecimalMin(value = "33.0", message = "userLat는 한국 범위를 벗어났습니다.")
+            @DecimalMax(value = "39.5", message = "userLat는 한국 범위를 벗어났습니다.")
+            Double userLat,
+
+            @NotNull(message = "userLng는 필수입니다.")
+            @DecimalMin(value = "124.0", message = "userLng는 한국 범위를 벗어났습니다.")
+            @DecimalMax(value = "132.0", message = "userLng는 한국 범위를 벗어났습니다.")
+            Double userLng,
+
+            @NotBlank
+            String googleId,
+
+            @NotNull
+            List<Long> membershipIds
+
+    ) {
+    }
+
+
 }

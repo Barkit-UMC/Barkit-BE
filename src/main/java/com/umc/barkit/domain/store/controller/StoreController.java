@@ -4,7 +4,6 @@ import com.umc.barkit.domain.store.dto.req.StoreReqDTO;
 import com.umc.barkit.domain.store.dto.res.StoreResDTO;
 import com.umc.barkit.domain.store.enums.Category;
 import com.umc.barkit.domain.store.enums.DistanceType;
-import com.umc.barkit.domain.store.enums.Sort;
 import com.umc.barkit.domain.store.exception.StoreException;
 import com.umc.barkit.domain.store.exception.code.StoreErrorCode;
 import com.umc.barkit.domain.store.exception.code.StoreSuccessCode;
@@ -18,7 +17,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.time.LocalDateTime;
-import java.util.List;
 
 @RestController
 @RequiredArgsConstructor
@@ -33,7 +31,6 @@ public class StoreController implements StoreControllerDocs{
             StoreReqDTO.SearchReq req,
             DistanceType distanceType,
             Category category,
-            Sort sort,
             int cursor,
             int size
     ) {
@@ -51,22 +48,20 @@ public class StoreController implements StoreControllerDocs{
 
         return ApiResponse.onSuccess(
                 code,
-                storeQueryService.search(req, distanceType, category, sort, cursor, size)
+                storeQueryService.search(req, distanceType, category, cursor, size)
         );
     }
 
     @Override
     public ApiResponse<StoreResDTO.StoreDetail> detail(
             CustomUserDetails userDetails,
-            String googleId,
-            Double userLat,
-            Double userLng
+            StoreReqDTO.DetailReq req
     ) {
         Long userId = userDetails.getUserId();
         StoreSuccessCode code = StoreSuccessCode.FOUND;
         return ApiResponse.onSuccess(
                 code,
-                storeQueryService.detail(googleId, userLat, userLng, userId)
+                storeQueryService.detail(req, userId)
         );
     }
 }
