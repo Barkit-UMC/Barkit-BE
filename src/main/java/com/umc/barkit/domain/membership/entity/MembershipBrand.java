@@ -19,7 +19,7 @@ public class MembershipBrand extends BaseEntity {
     @Column(name = "name", nullable = false, length = 100)
     private String name;
 
-    @Column(name = "logo_url", length = 255)
+    @Column(name = "logo_url", columnDefinition = "TEXT")
     private String logoUrl;
 
     @Column(name = "color", length = 10)
