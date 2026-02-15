@@ -30,8 +30,8 @@ public class RedisCacheConfig {
                 );
 
         Map<String, RedisCacheConfiguration> configs = new HashMap<>();
-        configs.put("googleSearchNear", base.entryTtl(Duration.ofMinutes(10)));
-        configs.put("googleSearchGlobal", base.entryTtl(Duration.ofMinutes(30)));
+        configs.put("googleSearchNear", base.entryTtl(Duration.ofHours(24)));
+        configs.put("googleSearchGlobal", base.entryTtl(Duration.ofMinutes(72)));
 
         return RedisCacheManager.builder(cf)
                 .cacheDefaults(base)
