@@ -1,5 +1,6 @@
 package com.umc.barkit.domain.store.external.google.service;
 
+import com.umc.barkit.domain.store.dto.google.GooglePlaceDTO;
 import com.umc.barkit.domain.store.external.google.GoogleMapSearchClient;
 import com.umc.barkit.domain.store.external.google.dto.GoogleResDTO;
 import lombok.RequiredArgsConstructor;
@@ -34,6 +35,14 @@ public class GoogleSearchCacheService {
         return googleClient.searchText(query);
     }
 
-
+    @Cacheable(
+            cacheNames = "googlePlaceDetail",
+            key = "#googleId",
+            sync = true
+    )
+    public GooglePlaceDTO.Place getPlaceDetail(String googleId) {
+        log.info("[CACHE MISS] googlePlaceDetail googleId={}", googleId);
+        return googleClient.getPlaceDetail(googleId);
+    }
 }
 

@@ -132,10 +132,8 @@ public class StoreQueryServiceImpl implements StoreQueryService{
 
         log.info("[DETAIL CALL] googleId={}", req.googleId());
 
-
         // Google Places API 호출
-        GooglePlaceDTO.Place g = googleClient.getPlaceDetail(req.googleId());
-
+        GooglePlaceDTO.Place g = googleSearchCacheService.getPlaceDetail(req.googleId());
 
         // 위치 계산
         double storeLat = g.location().latitude();
