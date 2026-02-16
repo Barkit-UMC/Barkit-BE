@@ -34,7 +34,6 @@ public class StoreController implements StoreControllerDocs{
             int cursor,
             int size
     ) {
-        LocalDateTime startTime = LocalDateTime.now();
 
         if (userDetails == null) {
             throw new GeneralException(GeneralErrorCode.UNAUTHORIZED);

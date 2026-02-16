@@ -14,8 +14,8 @@ public class AsyncConfig {
     @Bean(name = "googleSearchExecutor")
     public Executor apiExecutor() {
         ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
-        executor.setCorePoolSize(16);
-        executor.setMaxPoolSize(32);
+        executor.setCorePoolSize(4);
+        executor.setMaxPoolSize(8);
         executor.setQueueCapacity(300);
         executor.setThreadNamePrefix("google-search-");
         executor.setWaitForTasksToCompleteOnShutdown(true);

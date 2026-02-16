@@ -18,8 +18,7 @@ public class GoogleSearchCacheService {
 
     @Cacheable(
             cacheNames = "googleSearchNear",
-            key = "T(com.umc.barkit.domain.store.external.google.util.CacheKeyUtil).nearKey(#query, #lat, #lng)",
-            unless = "#result == null || #result.isEmpty()"
+            key = "T(com.umc.barkit.domain.store.external.google.util.CacheKeyUtil).nearKey(#query, #lat, #lng)"
     )
     public List<GoogleResDTO.Place> searchNear(String query, double lat, double lng) {
         log.info("[CACHE MISS] googleSearchNear query={}", query);
@@ -28,12 +27,13 @@ public class GoogleSearchCacheService {
 
     @Cacheable(
             cacheNames = "googleSearchGlobal",
-            key = "T(com.umc.barkit.domain.store.external.google.util.CacheKeyUtil).globalKey(#query)",
-            unless = "#result == null || #result.isEmpty()"
+            key = "T(com.umc.barkit.domain.store.external.google.util.CacheKeyUtil).globalKey(#query)"
     )
     public List<GoogleResDTO.Place> searchGlobal(String query) {
         log.info("[CACHE MISS] googleSearchGlobal query={}", query);
         return googleClient.searchText(query);
     }
+
+
 }
 
