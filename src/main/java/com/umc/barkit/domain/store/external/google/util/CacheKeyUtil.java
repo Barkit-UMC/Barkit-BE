@@ -7,8 +7,8 @@ public class CacheKeyUtil {
 
     public static String nearKey(String query, double lat, double lng) {
         String nq = StoreUtil.searchNormalize(query);
-        double lat3 = round(lat, 3);
-        double lng3 = round(lng, 3);
+        double lat3 = round(lat, 2);
+        double lng3 = round(lng, 2);
         return "q=" + nq + ":lat=" + lat3 + ":lng=" + lng3;
     }
 

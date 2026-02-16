@@ -130,6 +130,8 @@ public class StoreQueryServiceImpl implements StoreQueryService{
     @Override
     public StoreResDTO.StoreDetail detail(StoreReqDTO.DetailReq req, Long userId) {
 
+        log.info("[DETAIL CALL] googleId={}", req.googleId());
+
 
         // Google Places API 호출
         GooglePlaceDTO.Place g = googleClient.getPlaceDetail(req.googleId());
