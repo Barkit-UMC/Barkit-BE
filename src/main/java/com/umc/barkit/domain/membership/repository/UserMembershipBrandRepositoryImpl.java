@@ -109,7 +109,7 @@ public class UserMembershipBrandRepositoryImpl implements UserMembershipBrandRep
                 .join(storeBrandMembershipBrand)
                 .on(storeBrandMembershipBrand.storeBrand.eq(storeBrand))
                 .where(storeBrandMembershipBrand.membershipBrand.id.eq(membershipBrandId))
-                .orderBy(storeBrand.id.asc())
+                .orderBy(storeBrandMembershipBrand.popularityRank.asc())
                 .fetch();
     }
 
